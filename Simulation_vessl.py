@@ -179,7 +179,21 @@ class Stockyard_simulation:
 
 
     def Train(self,train_step,eval_step,K,pr_num,batch_num,simulation_day,lookahead_num,ppo,model_dir):
+        eval_set=[]
         history = np.zeros((train_step,2))
+        for _ in range(pr_num):
+            grid,grid_save,init_blocks=self.Generate_grid(None)
+            total_block=[]
+            for i in range(1,simulation_day+1):
+                Created_blocks=self.Create_blocks() # num,2
+                total_block.append(Created_blocks)
+            for e,block_by_day in enumerate(total_block):
+                if e==0:
+                    block_concat=block_by_day
+                else:
+                    block_concat=np.concatenate((block_concat, block_by_day), axis=0)
+            total_block_encoded=self.block_encoding(block_concat,self.TP_type)
+            eval_set.append([grid.copy(),total_block.copy(),total_block_encoded.copy()])
         for tr_step in range(train_step):
             ave_rearrangement=0
             gridss=[]
@@ -202,7 +216,7 @@ class Stockyard_simulation:
                         block_concat=np.concatenate((block_concat, block_by_day), axis=0)
                 total_block_encoded=self.block_encoding(block_concat,self.TP_type)
                 for ___ in range(batch_num):
-                    total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,ppo,grid,total_block,total_block_encoded)
+                    total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,ppo,grid.copy(),total_block.copy(),total_block_encoded.copy())
                     gridss.append(grids)
                     blockss.append(blocks)
                     actionss.append(actions)
@@ -232,6 +246,13 @@ class Stockyard_simulation:
             vessl.log(step=tr_step, payload={'ave_loss': ave_loss})
             vessl.log(step=tr_step, payload={'v_loss': v_loss})
             vessl.log(step=tr_step, payload={'p_loss': p_loss})
+            if tr_step%eval_step==0:
+                ave_rearrangement=0
+                for ev_set in eval_set:
+                    for _____ in range(batch_num):
+                        total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,ppo,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
+                        ave_rearrangement+=total_rearrangement
+                vessl.log(step=tr_step, payload={'eval_rearrangement': ave_rearrangement/pr_num/batch_num}
         return history
 if __name__=="__main__":
     problem_dir='/output/problem_set/'
@@ -246,7 +267,7 @@ if __name__=="__main__":
       
     device='cuda'
     ST_sim=Stockyard_simulation(yard_size=(5,5),initial_block=10,lam=1/250,weight=(100,501),TP_type=[200,350,550],Block_per_Day=(6,8),mod=0)
-    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=5,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=1, beta=0.5, epsilon=0.2, mod='MLP').to(device)
-    history=ST_sim.Train(train_step=1000,eval_step=10,K=2,pr_num=5,batch_num=10,simulation_day=10,lookahead_num=5,ppo=ppo,model_dir=model_dir)
+    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=1, beta=0.5, epsilon=0.2, mod='MLP').to(device)
+    history=ST_sim.Train(train_step=1000,eval_step=40,K=2,pr_num=5,batch_num=10,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir=model_dir)
     history=pd.DataFrame(history)
     history.to_excel(history_dir+'history.xlsx', sheet_name='Sheet', index=False)
