@@ -252,7 +252,7 @@ class Stockyard_simulation:
                     for _____ in range(batch_num):
                         total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,ppo,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                         ave_rearrangement+=total_rearrangement
-                vessl.log(step=tr_step, payload={'eval_rearrangement': ave_rearrangement/pr_num/batch_num}
+                vessl.log(step=tr_step, payload={'eval_rearrangement': ave_rearrangement/pr_num/batch_num})
         return history
 if __name__=="__main__":
     problem_dir='/output/problem_set/'
