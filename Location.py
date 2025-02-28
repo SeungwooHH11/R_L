@@ -336,7 +336,7 @@ class PPO(nn.Module):
         temp_state_values=self.calculate_v(grids.reshape(-1,r,c,fea),blocks.reshape(b,-1,fea)) #b,1
         state_values=temp_state_values # b,1
         next_state_values=torch.cat([temp_state_values[1:],temp_state_values[[0]]],dim=0) # b,1
-        td_target = rewards + self.gamma * next_state_values * dones #b,1
+        td_target = rewards + self.gamma * next_state_values * (1-dones) #b,1
         delta = td_target - state_values
         pi_cal,_=self.Locate(grids,blocks,masks,actions) #b,1
         print(pi_cal.shape)
