@@ -267,7 +267,7 @@ if __name__=="__main__":
       
     device='cuda'
     ST_sim=Stockyard_simulation(yard_size=(5,5),initial_block=10,lam=1/250,weight=(100,501),TP_type=[200,350,550],Block_per_Day=(6,8),mod=0)
-    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=3,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.5, epsilon=0.2, mod='MLP').to(device)
-    history=ST_sim.Train(train_step=1000,eval_step=40,K=2,pr_num=5,batch_num=10,simulation_day=10,lookahead_num=3,ppo=ppo,model_dir=model_dir)
+    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.5, epsilon=0.2, mod='MLP').to(device)
+    history=ST_sim.Train(train_step=1000,eval_step=40,K=2,pr_num=5,batch_num=10,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir=model_dir)
     history=pd.DataFrame(history)
     history.to_excel(history_dir+'history.xlsx', sheet_name='Sheet', index=False)
