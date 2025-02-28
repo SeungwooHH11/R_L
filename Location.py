@@ -339,7 +339,7 @@ class PPO(nn.Module):
         td_target = rewards + self.gamma * next_state_values * (1-dones) #b,1
         delta = td_target - state_values
         pi_cal,_=self.Locate(grids,blocks,masks,actions) #b,1
-        print(pi_cal.shape)
+        
         advantage_lst = np.zeros((b,1))
         advantage_lst = torch.tensor(advantage_lst, dtype=torch.float32).to(device)
         i = 0
@@ -364,7 +364,7 @@ class PPO(nn.Module):
         self.optimizer.zero_grad()
         loss.mean().backward()
         self.optimizer.step()
-        if step1 % 10 == 0:
+        if step1 % 40 == 0:
             torch.save({
                 'model_state_dict': self.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
