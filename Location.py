@@ -342,9 +342,10 @@ class PPO(nn.Module):
         print(pi_cal.shape)
         advantage_lst = np.zeros((b,1))
         advantage_lst = torch.tensor(advantage_lst, dtype=torch.float32).to(device)
+        i = 0
         for ep in ep_len:
             advantage = 0.0
-            i = 0
+            
             for t in reversed(range(i, i + ep)):
                 advantage = self.gamma * self.lmbda * advantage + delta[t][0]
                 advantage_lst[t][0] = advantage
