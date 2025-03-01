@@ -344,7 +344,7 @@ if __name__=="__main__":
         os.makedirs(history_dir)
       
     device='cuda'
-    ST_sim=Stockyard_simulation(yard_size=(5,5),initial_block=5,lam=1/250,weight=(100,501),TP_type=[200,350,550],Block_per_Day=(6,8),mod=0)
+    ST_sim=Stockyard_simulation(yard_size=(5,5),initial_block=5,lam=1/250,weight=(100,501),TP_type=[200,350,550],Block_per_Day=(5,7),mod=0)
     ASR_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
