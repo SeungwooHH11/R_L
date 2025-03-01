@@ -236,7 +236,7 @@ class Stockyard_simulation:
 
 
 
-    def Train(self,train_step,eval_step,K,pr_num,batch_num,simulation_day,lookahead_num,ppo,model_dir,ASR,Random,BLF):
+    def Train(self,train_step,eval_step,K,pr_num,batch_num,simulation_day,lookahead_num,ppo,model_dir,ASR_1,Random_1,BLF_1):
         eval_set=[]
         history = np.zeros((train_step,2))
         for _ in range(pr_num):
@@ -256,19 +256,19 @@ class Stockyard_simulation:
         ave_rearrangement=0
         for ev_set in eval_set:
             for _____ in range(batch_num):
-                total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,ASR,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
+                total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,ASR_1,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                 ave_rearrangement+=total_rearrangement
         print('ASR ',ave_rearrangement/pr_num/batch_num)
         ave_rearrangement=0
         for ev_set in eval_set:
             for _____ in range(batch_num):
-                total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,Random,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
+                total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,Random_1,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                 ave_rearrangement+=total_rearrangement
         print('Random ',ave_rearrangement/pr_num/batch_num)
         ave_rearrangement=0
         for ev_set in eval_set:
             for _____ in range(batch_num):
-                total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,BLF,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
+                total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,BLF_1,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                 ave_rearrangement+=total_rearrangement
         print('BLF',ave_rearrangement/pr_num/batch_num)
         
@@ -345,10 +345,10 @@ if __name__=="__main__":
       
     device='cuda'
     ST_sim=Stockyard_simulation(yard_size=(5,5),initial_block=5,lam=1/250,weight=(100,501),TP_type=[200,350,550],Block_per_Day=(6,8),mod=0)
-    ASR=Heuristic(grid_size=(5,5),TP_type_len=3,mod='ASR')
-    Random=Heuristic(grid_size=(5,5),TP_type_len=3,mod='Random')
-    BLF=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
+    ASR_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='ASR')
+    Random_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='Random')
+    BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
     ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.5, epsilon=0.2, mod='GCN2').to(device)
-    history=ST_sim.Train(train_step=3000,eval_step=40,K=2,pr_num=10,batch_num=20,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir=model_dir,ASR,Random,BLF)
+    history=ST_sim.Train(train_step=3000,eval_step=40,K=2,pr_num=10,batch_num=20,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir=model_dir,ASR_1,Random_1,BLF_1)
     history=pd.DataFrame(history)
     history.to_excel(history_dir+'history.xlsx', sheet_name='Sheet', index=False)
