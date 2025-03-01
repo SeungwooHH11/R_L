@@ -49,14 +49,12 @@ class Heuristic():
                         step+=1
                 score.append(ave_score/step)
             min_index=np.argmin(np.array(score))
-            print(len(np.where(np.array(score)==np.array(score).min())))
             return torch.tensor(1),torch.tensor(candidate_space[min_index][0]*c+candidate_space[min_index][1])
         if self.mod=='Random':
             candidate_space=self.find_space(mask)
-            print(len(candidate_space))
+            
             
             random_index=np.random.randint(0,len(candidate_space))
-            print(random_index)
             return torch.tensor(1),torch.tensor(candidate_space[random_index][0]*c+candidate_space[random_index][1])
         if self.mod=='BLF':
             candidate_space=self.find_space(mask)
