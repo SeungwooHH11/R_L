@@ -167,10 +167,11 @@ class Stockyard_simulation:
             #print(len(block_located), 'located')
             #total_block = total_block[total_block[:, 0] > 100*(i+1)]
             for e,row in enumerate(block_located):
-                grids.append(grid.copy())
+                
                 cc=np.where(grid[:,:,1:1+len(self.TP_type)].sum(axis=2)>0)
                 if np.array(cc).shape[1]==grid.shape[0]*grid.shape[1]:
                     continue
+                grids.append(grid.copy())
             
                 blocks_vec=total_block_encoded[e:int(min(e+lookahead_num,max_length)),:].copy()
                 if len(blocks_vec)<lookahead_num:
@@ -356,7 +357,7 @@ if __name__=="__main__":
     ASR_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
-    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.5, epsilon=0.2, mod='MLP').to(device)
+    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.5, epsilon=0.2, mod='GCN2').to(device)
     history=ST_sim.Train(train_step=3000,eval_step=40,K=2,pr_num=10,batch_num=20,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir=model_dir,ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
     history=pd.DataFrame(history)
     history.to_excel(history_dir+'history.xlsx', sheet_name='Sheet', index=False)
