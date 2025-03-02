@@ -158,6 +158,7 @@ class Stockyard_simulation:
         rewards=[0]
         step=0
         block_num=0
+        print('initial block 5')
         for i in range(simulation_day):
             block_located = total_block_encoded[block_num:block_num+len(total_block[i])]
             block_num+=len(total_block[i])
