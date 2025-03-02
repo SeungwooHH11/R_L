@@ -94,6 +94,8 @@ class Stockyard_simulation:
             need_retrieve=True
             check_list=np.argwhere(mask == 0)
             check_num=np.zeros(len(check_list))
+            if len(check_list)==0:
+                print(grid[:,:,0])
             for e,space in enumerate(check_list):
                 count=Count_retrieval(grid,TP_capa,space)
                 check_num[e]=count
@@ -158,11 +160,11 @@ class Stockyard_simulation:
         rewards=[0]
         step=0
         block_num=0
-        print('initial block 5')
+        print('Simulation start')
         for i in range(simulation_day):
             block_located = total_block_encoded[block_num:block_num+len(total_block[i])]
             block_num+=len(total_block[i])
-            
+            print(len(block_located), 'located')
             #total_block = total_block[total_block[:, 0] > 100*(i+1)]
             for e,row in enumerate(block_located):
                 grids.append(grid.copy())
@@ -205,8 +207,8 @@ class Stockyard_simulation:
                     total_rearrangement+=rearrange_num
                     grid=end_grid.copy()
             
-            
-            
+            indices = self.find_indices(grid)
+            print(len(indices[0]), 'retrieved')
             while True:
                 indices = self.find_indices(grid)
                 if len(indices[0]) == 0:
@@ -229,9 +231,11 @@ class Stockyard_simulation:
                 total_rearrangement+=rearrange_num
                 grid=end_grid.copy()
                 
-                indices = self.find_indices(grid)
+                
             grid[:, :, 0] -= 100
             grid[:, :, 0] = np.maximum(grid[:, :, 0], 0)
+            cc=np.argwhere(grid[:,:,1:1+len(self.TP_type)].sum()>0)
+            print('day end',cc.shape)
         dones[-1]=1
         return total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs
 
