@@ -234,7 +234,7 @@ class Stockyard_simulation:
                 
             grid[:, :, 0] -= 100
             grid[:, :, 0] = np.maximum(grid[:, :, 0], 0)
-            cc=np.where(grid[:,:,1:1+len(self.TP_type)].sum()>0)
+            cc=np.where(grid[:,:,1:1+len(self.TP_type)].sum(axis=2)>0)
             print('day end',np.array(cc).shape)
         dones[-1]=1
         return total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs
