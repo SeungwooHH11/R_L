@@ -200,7 +200,7 @@ class Stockyard_simulation:
                 grid[r,c,1:-1]=total_block_encoded[e,1:]
                 grid[r,c,-1]=step
                 if need_retrieval:
-                    ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs=Retrieval(grid.copy(),len(self.TP_type)-1,target_block.copy(),ppo,step,grids,blocks,actions,rewards,dones,masks,probs,lookahead_num,TP_type_len)
+                    ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs=Retrieval(grid.copy(),len(self.TP_type)-1,target_block.copy(),ppo,step,grids,blocks,actions,rewards,dones,masks,probs,lookahead_num,len(self.TP_type))
                     total_rearrangement+=rearrange_num
                     grid=end_grid.copy()
             
