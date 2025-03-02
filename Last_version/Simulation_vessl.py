@@ -344,11 +344,11 @@ if __name__=="__main__":
         os.makedirs(history_dir)
       
     device='cuda'
-    ST_sim=Stockyard_simulation(yard_size=(5,5),initial_block=5,lam=1/250,weight=(100,501),TP_type=[200,350,550],Block_per_Day=(5,7),mod=0)
+    ST_sim=Stockyard_simulation(yard_size=(5,5),initial_block=5,lam=1/250,weight=(100,501),TP_type=[200,350,550],Block_per_Day=(4,6),mod=0)
     ASR_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
     ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.5, epsilon=0.2, mod='MLP').to(device)
-    history=ST_sim.Train(train_step=3000,eval_step=40,K=2,pr_num=10,batch_num=20,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir=model_dir,ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
+    history=ST_sim.Train(train_step=3000,eval_step=40,K=2,pr_num=10,batch_num=20,simulation_day=15,lookahead_num=1,ppo=ppo,model_dir=model_dir,ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
     history=pd.DataFrame(history)
     history.to_excel(history_dir+'history.xlsx', sheet_name='Sheet', index=False)
