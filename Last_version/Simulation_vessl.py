@@ -252,7 +252,7 @@ class Stockyard_simulation:
                     block_concat=np.concatenate((block_concat, block_by_day), axis=0)
             total_block_encoded=self.block_encoding(block_concat,self.TP_type)
             eval_set.append([grid.copy(),total_block.copy(),total_block_encoded.copy()])
-        
+        '''
         ave_rearrangement=0
         for ev_set in eval_set:
             for _____ in range(batch_num):
@@ -271,7 +271,7 @@ class Stockyard_simulation:
                 total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,BLF_1,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                 ave_rearrangement+=total_rearrangement
         print('BLF',ave_rearrangement/pr_num/batch_num)
-        
+        '''
         for tr_step in range(train_step):
             ave_rearrangement=0
             gridss=[]
@@ -348,7 +348,7 @@ if __name__=="__main__":
     ASR_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
-    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=3,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.5, epsilon=0.2, mod='GCN1').to(device)
+    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=3,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.5, epsilon=0.2, mod='GCN2').to(device)
     history=ST_sim.Train(train_step=3000,eval_step=40,K=2,pr_num=10,batch_num=20,simulation_day=10,lookahead_num=3,ppo=ppo,model_dir=model_dir,ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
     history=pd.DataFrame(history)
     history.to_excel(history_dir+'history.xlsx', sheet_name='Sheet', index=False)
