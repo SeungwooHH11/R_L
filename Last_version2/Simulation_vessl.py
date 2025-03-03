@@ -335,7 +335,7 @@ class Stockyard_simulation:
             probss = np.concatenate(probss, axis=0)
             block_leftss=np.concatenate(block_leftss,axis=0)
             for ____ in range(K):
-                ave_loss, v_loss, p_loss=ppo.update(gridss[:,:,:,:-1],blockss,block_leftss,actionss,rewardss,doness,maskss,probss,ep_len,100,'')
+                ave_loss, v_loss, p_loss=ppo.update(gridss[:,:,:,:-1],blockss,block_leftss,actionss,rewardss,doness,maskss,probss,ep_len,tr_step,model_dir)
             vessl.log(step=tr_step, payload={'train_average_rearrangement': ave_rearrangement})
             history[tr_step,0]=ave_rearrangement
             #vessl.log(step=tr_step, payload={'ave_loss': ave_loss})
