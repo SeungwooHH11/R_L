@@ -250,7 +250,7 @@ class Stockyard_simulation:
     def Train(self,train_step,eval_step,K,pr_num,batch_num,simulation_day,lookahead_num,ppo,model_dir,ASR_1,Random_1,BLF_1):
         eval_set=[]
         history = np.zeros((train_step,2))
-        '''
+        
         for _ in range(pr_num):
             grid,grid_save,init_blocks=self.Generate_grid(None)
             total_block=[]
@@ -264,7 +264,7 @@ class Stockyard_simulation:
                     block_concat=np.concatenate((block_concat, block_by_day), axis=0)
             total_block_encoded=self.block_encoding(block_concat,self.TP_type)
             eval_set.append([grid.copy(),total_block.copy(),total_block_encoded.copy()])
-        
+        '''
         ave_rearrangement=0
         for ev_set in eval_set:
             for _____ in range(5):
