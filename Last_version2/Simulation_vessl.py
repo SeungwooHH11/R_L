@@ -250,6 +250,7 @@ class Stockyard_simulation:
     def Train(self,train_step,eval_step,K,pr_num,batch_num,simulation_day,lookahead_num,ppo,model_dir,ASR_1,Random_1,BLF_1):
         eval_set=[]
         history = np.zeros((train_step,2))
+        '''
         for _ in range(pr_num):
             grid,grid_save,init_blocks=self.Generate_grid(None)
             total_block=[]
@@ -283,7 +284,7 @@ class Stockyard_simulation:
                 total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=self.Run_simulation(simulation_day,lookahead_num,BLF_1,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                 ave_rearrangement+=total_rearrangement
         print('BLF',ave_rearrangement/pr_num/batch_num)
-
+        '''
 
         for tr_step in range(train_step):
             ave_rearrangement=0
@@ -346,7 +347,7 @@ class Stockyard_simulation:
                 ave_rearrangement=0
                 for ev_set in eval_set:
                     for _____ in range(batch_num):
-                        total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,ppo,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
+                        total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=self.Run_simulation(simulation_day,lookahead_num,ppo,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                         ave_rearrangement+=total_rearrangement
                 vessl.log(step=tr_step, payload={'eval_rearrangement': ave_rearrangement/pr_num/batch_num})
             
