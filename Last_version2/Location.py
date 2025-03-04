@@ -367,7 +367,7 @@ class PPO(nn.Module):
 
         self.optimizer.zero_grad()
         loss.mean().backward()
-        torch.nn.utils.clip_grad_norm_(self.PPO.parameters(), max_norm=1.0)  
+        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)  
         self.optimizer.step()
         if step1 % 40 == 0:
             torch.save({
