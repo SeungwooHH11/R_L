@@ -251,7 +251,7 @@ class Stockyard_simulation:
 
 
 
-    def Train(self,train_data_num,ASR_1):
+    def Train(self,train_data_num,ASR_1,simulation_day):
         gridss = []
         blockss = []
         actionss = []
@@ -273,7 +273,7 @@ class Stockyard_simulation:
                 else:
                     block_concat = np.concatenate((block_concat, block_by_day), axis=0)
             total_block_encoded = self.block_encoding(block_concat, self.TP_type)
-            total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=self.Run_simulation(simulation_day,lookahead_num,ASR_1,grid.copy(),total_block.copy(),total_block_encoded.copy())
+            total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=self.Run_simulation(simulation_day,1,ASR_1,grid.copy(),total_block.copy(),total_block_encoded.copy())
             gridss.append(grids.copy())
             blockss.append(blocks.copy())
             actionss.append(actions.copy())
@@ -308,7 +308,7 @@ if __name__=="__main__":
     BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
     ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN2').to(device)
     #ST_sim.Train(train_step=1000,eval_step=1,K=500,pr_num=500,batch_num=1,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
-    gridss,blockss,actionss,maskss=ST_sim.Train(train_data_num=1000,ASR_1=ASR_1)
+    gridss,blockss,actionss,maskss=ST_sim.Train(train_data_num=1000,ASR_1=ASR_1,simulation_day=10)
     np.save(history_dir + 'grids_train.npy', gridss)
     np.save(history_dir + 'blocks_train.npy', blockss)
     np.save(history_dir + 'actions_train.npy', actionss)
