@@ -307,7 +307,7 @@ class PPO(nn.Module):
             merged_tensor = torch.cat([merged_tensor, block_lefts], dim=1)
             state_values=self.Critic_net(merged_tensor) #b 1
         return state_values
-    def Actor_net_update(self,gridss,blockss,answerss,maskss,step1):
+    def Actor_net_update(self,gridss,blockss,answerss,maskss):
         b, r, c, fea = gridss.shape
         gridss[:, :, :, 0] = gridss[:, :, :, 0] / 500.0
         blockss[:, :, 0] = blockss[:, :, 0] / 500.0
