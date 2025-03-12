@@ -269,6 +269,7 @@ class Stockyard_simulation:
             eval_set.append([grid.copy(),total_block.copy(),total_block_encoded.copy()])
 
         ave_rearrangement=0
+        '''
         for ev_set in eval_set:
             for _____ in range(5):
                 total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=self.Run_simulation(simulation_day,lookahead_num,ASR_1,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
@@ -286,7 +287,7 @@ class Stockyard_simulation:
                 total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=self.Run_simulation(simulation_day,lookahead_num,BLF_1,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                 ave_rearrangement+=total_rearrangement
         print('BLF',ave_rearrangement/pr_num/batch_num)
-
+        '''
         gridss = []
         blockss = []
         actionss = []
@@ -375,6 +376,6 @@ if __name__=="__main__":
     ASR_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
-    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN2').to(device)
+    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN1').to(device)
     #ST_sim.Train(train_step=1000,eval_step=1,K=500,pr_num=500,batch_num=1,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
     ST_sim.Train(train_data_num=1000, update_num=10000, train_step_num=1000, eval_step=10, pr_num=20, batch_num=50, K=5, simulation_day=10, lookahead_num=1,ppo=ppo,model_dir=model_dir,ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
