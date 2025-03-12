@@ -340,6 +340,7 @@ class Stockyard_simulation:
 
             for ____ in range(K):
                 loss=ppo.Actor_net_update(gridss[:,:,:,:-1],blockss,actionss,maskss,tr_step)
+                print(loss)
             if tr_step % 1 == 0:
                 torch.save({
                     'model_state_dict': ppo.state_dict(),
