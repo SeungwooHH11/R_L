@@ -4,7 +4,7 @@ from Location_supervised import *
 
 from Location_Heuristic import *
 
-#import vessl
+import vessl
 
 class Stockyard_simulation:
     def __init__(self,yard_size,initial_block,lam,weight,TP_type,Block_per_Day,mod):
@@ -363,7 +363,7 @@ class Stockyard_simulation:
                         total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=self.Run_simulation(simulation_day,lookahead_num,ppo,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                         ave_rearrangement+=total_rearrangement
                 print(tr_step,ave_rearrangement/pr_num)
-                #vessl.log(step=tr_step, payload={'eval_rearrangement': ave_rearrangement/pr_num/batch_num})
+                vessl.log(step=tr_step, payload={'eval_rearrangement': ave_rearrangement/pr_num/batch_num})
 
         return history
 if __name__=="__main__":
@@ -383,6 +383,6 @@ if __name__=="__main__":
     Random_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
     ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN2').to(device)
-    history=ST_sim.Train(train_step=1000,eval_step=1,K=500,pr_num=50,batch_num=1,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
+    history=ST_sim.Train(train_step=1000,eval_step=1,K=500,pr_num=500,batch_num=1,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
     history=pd.DataFrame(history)
     history.to_excel('history.xlsx', sheet_name='Sheet', index=False)
