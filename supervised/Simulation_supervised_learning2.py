@@ -253,7 +253,7 @@ class Stockyard_simulation:
 
     def Train(self,train_data_num,update_num,train_step_num,eval_step,pr_num,batch_num,K,simulation_day,lookahead_num,ppo,model_dir,ASR_1,Random_1,BLF_1):
         eval_set=[]
-        history = np.zeros((train_step,2))
+        
         for _ in range(pr_num):
             grid,grid_save,init_blocks=self.Generate_grid(None)
             total_block=[]
