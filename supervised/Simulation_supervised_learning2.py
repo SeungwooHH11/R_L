@@ -251,7 +251,7 @@ class Stockyard_simulation:
 
 
 
-    def Train(self,train_data_num,update_num,train_step_num,eval_step,pr_num,batch_num,K,simulation_day,lookahead_num,ppo,model_dir,ASR_1,Random_1,BLF_1):
+    def Train(self,train_data_num,update_num,train_step_num,eval_step,pr_num,batch_num,K,simulation_day,lookahead_num,ppo,model_dir,ASR_1,Random_1,BLF_1,history_dir):
         eval_set=[]
         
         for _ in range(pr_num):
@@ -322,6 +322,10 @@ class Stockyard_simulation:
         actionss = np.concatenate(actionss, axis=0)
 
         maskss = np.concatenate(maskss, axis=0)
+        np.save(history_dir+'grids_train.npy',gridss)
+        np.save(history_dir+'blocks_train.npy',blockss)
+        np.save(history_dir+'actions_train.npy',actionss)
+        np.save(history_dir+'masks_train.npy',maskss)
         total_len=len(gridss)
         print(total_len)
         for step in range(train_step_num):
@@ -378,4 +382,4 @@ if __name__=="__main__":
     BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
     ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='MLP').to(device)
     #ST_sim.Train(train_step=1000,eval_step=1,K=500,pr_num=500,batch_num=1,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
-    ST_sim.Train(train_data_num=1000, update_num=10000, train_step_num=1000, eval_step=10, pr_num=20, batch_num=50, K=5, simulation_day=10, lookahead_num=1,ppo=ppo,model_dir=model_dir,ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
+    ST_sim.Train(train_data_num=1000, update_num=10000, train_step_num=1000, eval_step=10, pr_num=20, batch_num=50, K=5, simulation_day=10, lookahead_num=1,ppo=ppo,model_dir=model_dir,ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1,history_dir=history_dir)
