@@ -322,15 +322,12 @@ class Stockyard_simulation:
         actionss = np.concatenate(actionss, axis=0)
 
         maskss = np.concatenate(maskss, axis=0)
-        np.save(history_dir+'grids_train.npy',gridss)
-        np.save(history_dir+'blocks_train.npy',blockss)
-        np.save(history_dir+'actions_train.npy',actionss)
-        np.save(history_dir+'masks_train.npy',maskss)
+        
         total_len=len(gridss)
         print(total_len)
         for step in range(train_step_num):
             ave_loss=0
-            indices = [random.randint(0, total_len) for _ in range(update_num)]
+            indices = [random.randint(0, total_len-1) for _ in range(update_num)]
             train_grids=gridss[indices].copy()
             train_blocks = blockss[indices].copy()
             train_actions = actionss[indices].copy()
