@@ -251,8 +251,8 @@ def retrieval(final_grid,input_grid,state_grid,target_block,path,ppo,step,grids,
             blocks_vec_tensor=torch.tensor(blocks_vec.reshape(1,lookahead_num,-1),dtype=torch.float32).to(device)
             blocks_vec_tensor[:,:,0]=blocks_vec_tensor[:,:,0]/500.0
             pr,target_space=ppo.Locate(state_grid_tensor,blocks_vec_tensor,mask,ans=None)   
-            target_r=target_space//input_grid.shape[0]
-            target_c=target_space%input_grid.shape[1]
+            target_r=target_space.item()//input_grid.shape[0]
+            target_c=target_space.item()%input_grid.shape[1]
             probs.append(pr.item())
             actions.append(target_space.item())
             dones.append(0)
@@ -289,8 +289,8 @@ def retrieval(final_grid,input_grid,state_grid,target_block,path,ppo,step,grids,
         
         pr,target_space=ppo.Locate(state_grid_tensor,blocks_vec_tensor,mask,ans=None)   
         
-        target_r=target_space//input_grid.shape[0]
-        target_c=target_space%input_grid.shape[1]
+        target_r=target_space.item()//input_grid.shape[0]
+        target_c=target_space.item()%input_grid.shape[1]
         probs.append(pr.item())
         actions.append(target_space.item())
         dones.append(0)
