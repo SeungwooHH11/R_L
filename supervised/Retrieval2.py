@@ -32,25 +32,29 @@ def label_connected_paths(input_grid):
     # 입구에 있는 Free space들은 연결 시켜서
     grid=input_grid.copy()
     rows,cols=len(grid),len(grid[0])
-    visited=[[False for _ in range(cols)] for _ in range(rows)]
+    temp_grid=np.zeros((rows+1,col))
+    temp_grid[1:,:]=grid
+    grid=temp_grid
+    visited=[[False for _ in range(cols)] for _ in range(rows+1)]
     label=2
     directions=[(-1,0),(1,0),(0,-1),(0,1)]
     label_num=np.zeros(rows*cols+rows)
     def dfs(x,y,label):
         visited[x][y]=True
         grid[x][y]=label
-        label_num[label]+=1
+        if x!=0:
+            label_num[label]+=1
         for dx,dy in directions:
             nx,ny=x+dx,y+dy
-            if 0<=nx<rows and 0<=ny<cols and not visited[nx][ny] and grid[nx][ny]==0:
+            if 0<=nx<rows+1 and 0<=ny<cols and not visited[nx][ny] and grid[nx][ny]==0:
                 dfs(nx,ny,label)
             
-    for i in range(rows):
+    for i in range(row+1):
         for j in range(cols):
             if grid[i][j]==0 and not visited[i][j]:
                 dfs(i,j,label)
                 label+=1
-                
+    grid=grid[1:,:]
     return grid,label_num
 
 def search_path(result,grid):
@@ -172,8 +176,12 @@ def bfs_area(final_grid, grid, start,path): #visited, gird, goal
     return obstacle,free_space
 
 def bfs_path_exists(grid, start, goal):
-    # 여기서 한번 입구 붙은 Free space들 이어주기
+    start[0]=start[0]+1
+    goal[0]=goal[0]+1
     rows, cols = grid.shape  # numpy 배열 크기 가져오기
+    temp_grid=np.zeros((rows+1,cols))
+    temp_grid[1:,:]=grid
+    grid=temp_grid.copy()
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # 상, 하, 좌, 우 이동
     queue = deque([tuple(start)])
     vs = set([tuple(start)])
