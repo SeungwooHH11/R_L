@@ -32,7 +32,7 @@ def label_connected_paths(input_grid):
     # 입구에 있는 Free space들은 연결 시켜서
     grid=input_grid.copy()
     rows,cols=len(grid),len(grid[0])
-    temp_grid=np.zeros((rows+1,col))
+    temp_grid=np.zeros((rows+1,cols))
     temp_grid[1:,:]=grid
     grid=temp_grid
     visited=[[False for _ in range(cols)] for _ in range(rows+1)]
@@ -49,7 +49,7 @@ def label_connected_paths(input_grid):
             if 0<=nx<rows+1 and 0<=ny<cols and not visited[nx][ny] and grid[nx][ny]==0:
                 dfs(nx,ny,label)
             
-    for i in range(row+1):
+    for i in range(rows+1):
         for j in range(cols):
             if grid[i][j]==0 and not visited[i][j]:
                 dfs(i,j,label)
@@ -176,6 +176,8 @@ def bfs_area(final_grid, grid, start,path): #visited, gird, goal
     return obstacle,free_space
 
 def bfs_path_exists(grid, start, goal):
+    start=start.copy()
+    goal=goal.copy()
     start[0]=start[0]+1
     goal[0]=goal[0]+1
     rows, cols = grid.shape  # numpy 배열 크기 가져오기
