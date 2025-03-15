@@ -29,6 +29,7 @@ def backtracking_dp(grid,goal):
 
 
 def label_connected_paths(input_grid):
+    # 입구에 있는 Free space들은 연결 시켜서
     grid=input_grid.copy()
     rows,cols=len(grid),len(grid[0])
     visited=[[False for _ in range(cols)] for _ in range(rows)]
@@ -79,7 +80,7 @@ def search_path(result,grid):
             path.append(current.copy())
     
     return path,rearrange_count
-
+# naive DP로 path 추정
 
 def cal_area(path,labeled_grid,grid,label_num,input_dp):
     dp=input_dp.copy()
@@ -171,6 +172,7 @@ def bfs_area(final_grid, grid, start,path): #visited, gird, goal
     return obstacle,free_space
 
 def bfs_path_exists(grid, start, goal):
+    # 여기서 한번 입구 붙은 Free space들 이어주기
     rows, cols = grid.shape  # numpy 배열 크기 가져오기
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # 상, 하, 좌, 우 이동
     queue = deque([tuple(start)])
