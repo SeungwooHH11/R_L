@@ -367,9 +367,9 @@ if __name__=="__main__":
     if not os.path.exists(input_dir):
         os.makedirs(input_dir)
     device='cuda'
-    pr_size=(7,7)
-    init_block=10
-    bpd=(10,14)
+    pr_size=(5,5)
+    init_block=5
+    bpd=(5,7)
     ST_sim=Stockyard_simulation(yard_size=pr_size,initial_block=init_block,lam=1/250,weight=(100,501),TP_type=[200,350,550],Block_per_Day=bpd,mod=0)
     ASR_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='Random')
