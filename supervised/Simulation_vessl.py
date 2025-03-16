@@ -4,7 +4,7 @@ from Location import *
 
 from Location_Heuristic import *
 from collections import OrderedDict
-#import vessl
+import vessl
 
 class Stockyard_simulation:
     def __init__(self,yard_size,initial_block,lam,weight,TP_type,Block_per_Day,mod):
