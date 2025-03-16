@@ -336,14 +336,14 @@ class Stockyard_simulation:
             probss = np.concatenate(probss, axis=0)
             block_leftss=np.concatenate(block_leftss,axis=0)
             for ____ in range(K):
-                ave_loss, v_loss, p_loss=ppo.update(gridss[:,:,:,:-1],blockss,block_leftss,actionss,rewardss,doness,maskss,probss,ep_len,100,'')
-            #vessl.log(step=tr_step, payload={'train_average_rearrangement': ave_rearrangement})
+                ave_loss, v_loss, p_loss=ppo.update(gridss[:,:,:,:-1],blockss,block_leftss,actionss,rewardss,doness,maskss,probss,ep_len,tr_step,model_dir)
+            vessl.log(step=tr_step, payload={'train_average_rearrangement': ave_rearrangement})
             history[tr_step,0]=ave_rearrangement
-            print(ave_rearrangement)
-            #vessl.log(step=tr_step, payload={'ave_loss': ave_loss})
-            #vessl.log(step=tr_step, payload={'v_loss': v_loss})
-            #vessl.log(step=tr_step, payload={'p_loss': p_loss})
-            '''
+            
+            vessl.log(step=tr_step, payload={'ave_loss': ave_loss})
+            vessl.log(step=tr_step, payload={'v_loss': v_loss})
+            vessl.log(step=tr_step, payload={'p_loss': p_loss})
+            
             if tr_step%eval_step==0:
                 ave_rearrangement=0
                 for ev_set in eval_set:
@@ -351,7 +351,7 @@ class Stockyard_simulation:
                         total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,ppo,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                         ave_rearrangement+=total_rearrangement
                 vessl.log(step=tr_step, payload={'eval_rearrangement': ave_rearrangement/pr_num/batch_num})
-            '''
+            
         return history
 if __name__=="__main__":
     problem_dir='/output/problem_set/'
