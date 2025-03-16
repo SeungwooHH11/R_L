@@ -37,6 +37,9 @@ class GCNModel1(nn.Module):
         self.gcn1 = GCNLayer(hidden_dim, hidden_dim)
         self.gcn2 = GCNLayer(hidden_dim, hidden_dim)
         self.gcn3 = GCNLayer(hidden_dim, hidden_dim)
+        self.gcn4 = GCNLayer(hidden_dim, hidden_dim)
+        self.gcn5 = GCNLayer(hidden_dim, hidden_dim)
+        
         self.init_weights()
         self.A=A_hat
 
@@ -51,6 +54,8 @@ class GCNModel1(nn.Module):
         X = self.gcn1(self.A, X)/4.0
         X = self.gcn2(self.A, X)/4.0
         X = self.gcn3(self.A, X)/4.0
+        X = self.gcn4(self.A, X)/4.0
+        X = self.gcn5(self.A, X)/4.0
         
         return X
 
@@ -59,7 +64,7 @@ class GCNModel2(nn.Module):
     def __init__(self, input_dim, hidden_dim,Up_A_hat, Down_A_hat, Right_A_hat, Left_A_hat):
         super(GCNModel2, self).__init__()
         self.embedding = nn.Linear(input_dim, hidden_dim)
-        self.gcn_layers = nn.ModuleList([GCNLayer(hidden_dim, hidden_dim) for _ in range(12)])
+        self.gcn_layers = nn.ModuleList([GCNLayer(hidden_dim, hidden_dim) for _ in range(20)])
         self.a = nn.Parameter(torch.tensor(0.8, dtype=torch.float32))
         self.init_weights()
         self.U=Up_A_hat
@@ -74,7 +79,7 @@ class GCNModel2(nn.Module):
 
     def forward(self, X):
         X = self.embedding(X)
-        for i in range(0, 12, 4):
+        for i in range(0, 20, 4):
             X = (
                 self.gcn_layers[i](self.U, X) +
                 self.gcn_layers[i+1](self.D, X) +
