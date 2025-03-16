@@ -382,6 +382,6 @@ if __name__=="__main__":
 
     # 필터링된 가중치만 로드
     ppo.load_state_dict(filtered_state_dict, strict=False)
-    history=ST_sim.Train(train_step=3000,eval_step=40,K=2,pr_num=10,batch_num=20,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
+    history=ST_sim.Train(train_step=3000,eval_step=20,K=2,pr_num=10,batch_num=40,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
     history=pd.DataFrame(history)
     history.to_excel('history.xlsx', sheet_name='Sheet', index=False)
