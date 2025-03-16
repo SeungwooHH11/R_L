@@ -348,7 +348,7 @@ class Stockyard_simulation:
                 ave_rearrangement=0
                 for ev_set in eval_set:
                     for _____ in range(batch_num):
-                        total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs=self.Run_simulation(simulation_day,lookahead_num,ppo,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
+                        total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=self.Run_simulation(simulation_day,lookahead_num,ppo,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy())
                         ave_rearrangement+=total_rearrangement
                 vessl.log(step=tr_step, payload={'eval_rearrangement': ave_rearrangement/pr_num/batch_num})
             
