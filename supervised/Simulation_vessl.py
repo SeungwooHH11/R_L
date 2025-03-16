@@ -3,7 +3,7 @@ from Retrieval2 import *
 from Location import *
 
 from Location_Heuristic import *
-
+from collections import OrderedDict
 #import vessl
 
 class Stockyard_simulation:
@@ -363,13 +363,22 @@ if __name__=="__main__":
     history_dir='/output/history/'
     if not os.path.exists(history_dir):
         os.makedirs(history_dir)
-      
+    input_dir='/input/'
+    if not os.path.exists(input_dir):
+        os.makedirs(input_dir)
     device='cuda'
     ST_sim=Stockyard_simulation(yard_size=(5,5),initial_block=5,lam=1/250,weight=(100,501),TP_type=[200,350,550],Block_per_Day=(5,7),mod=0)
     ASR_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=(5,5),TP_type_len=3,mod='BLF')
     ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=(5,5), learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN2').to(device)
+    checkpoint = torch.load(input_dir+'DGCN_supervised.pth',map_location=torch.device('cuda'))  # 파일에서 로드할 경우
+    full_state_dict = checkpoint['model_state_dict']
+
+    filtered_state_dict = OrderedDict({k: v for k, v in full_state_dict.items() if 'Critic_net' not in k})
+
+    # 필터링된 가중치만 로드
+    ppo.load_state_dict(filtered_state_dict, strict=False)
     history=ST_sim.Train(train_step=3000,eval_step=40,K=2,pr_num=10,batch_num=20,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
     history=pd.DataFrame(history)
     history.to_excel('history.xlsx', sheet_name='Sheet', index=False)
