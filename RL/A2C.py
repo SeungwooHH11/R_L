@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
-device='cpu'
+device='cuda'
+import vessl
 
 from InNOutSpace import *
 class ActorCritic(nn.Module):
@@ -64,7 +65,7 @@ action_dim = env.action_space.n
 state_dim = width * height
 agent = A2CAgent(state_dim, action_dim)
 
-num_episodes = 11000
+num_episodes = 50000
 timestep_limit = 300
 history=np.zeros(num_episodes)
 for episode in range(num_episodes):
@@ -90,4 +91,4 @@ for episode in range(num_episodes):
             break
 
     agent.update(rewards, log_probs, values, dones)
-    print(f"Episode {episode + 1}, Total Reward: {total_reward}")
+    vessl.log(step=episode, payload={'reward': total_reward})
