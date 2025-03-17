@@ -12,7 +12,6 @@ device = 'cuda'
 np.random.seed(1)
 random.seed(1)
 torch.manual_seed(1)
-
 class GATLayer(nn.Module):
     def __init__(self, in_dim, out_dim, num_heads=1, dropout=0.2):
         super(GATLayer, self).__init__()
@@ -31,40 +30,40 @@ class GATLayer(nn.Module):
         nn.init.xavier_uniform_(self.a_src)
         nn.init.xavier_uniform_(self.a_dst)
 
-        self.dropout = nn.Dropout(dropout)
+        #self.dropout = nn.Dropout(dropout)
 
     def forward(self, A, X):
         """
-        A: Adjacency matrix (n, n)
-        X: Node features (n, f)
+        A: Adjacency matrix (b, n, n)
+        X: Node features (b, n, f)
         """
-        n = X.shape[0]  # Number of nodes
+        b, n, _ = X.shape  # Batch size, number of nodes
 
         # Apply linear transformation
-        X_trans = self.W(X)  # (n, out_dim)
+        X_trans = self.W(X)  # (b, n, out_dim)
 
         # Multi-head attention
-        X_split = X_trans.view(n, self.num_heads, self.out_dim)  # (n, heads, out_dim)
+        X_split = X_trans.view(b, n, self.num_heads, self.out_dim)  # (b, n, heads, out_dim)
 
         # Compute attention coefficients
-        attn_src = torch.einsum("nhd,hd->nh", X_split, self.a_src)  # (n, heads)
-        attn_dst = torch.einsum("nhd,hd->nh", X_split, self.a_dst)  # (n, heads)
+        attn_src = torch.einsum("bnhd,hd->bnh", X_split, self.a_src)  # (b, n, heads)
+        attn_dst = torch.einsum("bnhd,hd->bnh", X_split, self.a_dst)  # (b, n, heads)
 
-        attn_matrix = attn_src.unsqueeze(1) + attn_dst.unsqueeze(0)  # (n, n, heads)
+        attn_matrix = attn_src.unsqueeze(2) + attn_dst.unsqueeze(1)  # (b, n, n, heads)
         attn_matrix = F.leaky_relu(attn_matrix, negative_slope=0.2)
         
         # Mask out non-existing edges (use adjacency matrix)
         attn_matrix = attn_matrix.masked_fill(A.unsqueeze(-1) == 0, float("-inf"))
 
         # Apply softmax normalization
-        attn_matrix = F.softmax(attn_matrix, dim=1)
-        attn_matrix = self.dropout(attn_matrix)  # (n, n, heads)
+        attn_matrix = F.softmax(attn_matrix, dim=2)
+        attn_matrix = self.dropout(attn_matrix)  # (b, n, n, heads)
 
         # Apply attention mechanism
-        out = torch.einsum("nnk,nkd->nkd", attn_matrix, X_split)  # (n, heads, out_dim)
+        out = torch.einsum("bnnk,bnkd->bnkd", attn_matrix, X_split)  # (b, n, heads, out_dim)
 
         # Concatenate multi-head results
-        out = out.reshape(n, -1)  # (n, out_dim * heads)
+        out = out.reshape(b, n, -1)  # (b, n, out_dim * heads)
         return out
 
 class GATModel(nn.Module):
@@ -75,7 +74,7 @@ class GATModel(nn.Module):
         self.gat2 = GATLayer(hidden_dim, hidden_dim, num_heads)
         self.gat3 = GATLayer(hidden_dim, hidden_dim, num_heads)
         self.init_weights()
-        self.A = A_hat
+        self.A = A_hat  # (b, n, n)
 
     def init_weights(self):
         nn.init.xavier_uniform_(self.embedding.weight)
@@ -90,10 +89,13 @@ class GATModel(nn.Module):
             nn.init.xavier_uniform_(m.a_dst)
 
     def forward(self, X):
-        X = self.embedding(X)
-        X = self.gat1(self.A, X)
-        X = self.gat2(self.A, X)
-        X = self.gat3(self.A, X)
+        """
+        X: (b, n, f) - Node feature matrix
+        """
+        X = self.embedding(X)  # (b, n, hidden_dim)
+        X = self.gat1(self.A, X) 
+        X = self.gat2(self.A, X) 
+        X = self.gat3(self.A, X) 
         return X
 
 
