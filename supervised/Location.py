@@ -13,7 +13,88 @@ np.random.seed(1)
 random.seed(1)
 torch.manual_seed(1)
 
+class GATLayer(nn.Module):
+    def __init__(self, in_dim, out_dim, num_heads=1, dropout=0.2):
+        super(GATLayer, self).__init__()
+        self.num_heads = num_heads
+        self.out_dim = out_dim // num_heads
+        
+        # Linear transformation for input feature
+        self.W = nn.Linear(in_dim, out_dim, bias=False)
+        
+        # Attention mechanism parameters
+        self.a_src = nn.Parameter(torch.zeros(size=(num_heads, self.out_dim)))
+        self.a_dst = nn.Parameter(torch.zeros(size=(num_heads, self.out_dim)))
 
+        # Initialize weights
+        nn.init.xavier_uniform_(self.W.weight)
+        nn.init.xavier_uniform_(self.a_src)
+        nn.init.xavier_uniform_(self.a_dst)
+
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, A, X):
+        """
+        A: Adjacency matrix (n, n)
+        X: Node features (n, f)
+        """
+        n = X.shape[0]  # Number of nodes
+
+        # Apply linear transformation
+        X_trans = self.W(X)  # (n, out_dim)
+
+        # Multi-head attention
+        X_split = X_trans.view(n, self.num_heads, self.out_dim)  # (n, heads, out_dim)
+
+        # Compute attention coefficients
+        attn_src = torch.einsum("nhd,hd->nh", X_split, self.a_src)  # (n, heads)
+        attn_dst = torch.einsum("nhd,hd->nh", X_split, self.a_dst)  # (n, heads)
+
+        attn_matrix = attn_src.unsqueeze(1) + attn_dst.unsqueeze(0)  # (n, n, heads)
+        attn_matrix = F.leaky_relu(attn_matrix, negative_slope=0.2)
+        
+        # Mask out non-existing edges (use adjacency matrix)
+        attn_matrix = attn_matrix.masked_fill(A.unsqueeze(-1) == 0, float("-inf"))
+
+        # Apply softmax normalization
+        attn_matrix = F.softmax(attn_matrix, dim=1)
+        attn_matrix = self.dropout(attn_matrix)  # (n, n, heads)
+
+        # Apply attention mechanism
+        out = torch.einsum("nnk,nkd->nkd", attn_matrix, X_split)  # (n, heads, out_dim)
+
+        # Concatenate multi-head results
+        out = out.reshape(n, -1)  # (n, out_dim * heads)
+        return out
+
+class GATModel(nn.Module):
+    def __init__(self, input_dim, hidden_dim, A_hat, num_heads=4):
+        super(GATModel, self).__init__()
+        self.embedding = nn.Linear(input_dim, hidden_dim)
+        self.gat1 = GATLayer(hidden_dim, hidden_dim, num_heads)
+        self.gat2 = GATLayer(hidden_dim, hidden_dim, num_heads)
+        self.gat3 = GATLayer(hidden_dim, hidden_dim, num_heads)
+        self.init_weights()
+        self.A = A_hat
+
+    def init_weights(self):
+        nn.init.xavier_uniform_(self.embedding.weight)
+        for m in self.modules():
+            if isinstance(m, GATLayer):
+                m.apply(self._init_gat_weights)
+
+    def _init_gat_weights(self, m):
+        if isinstance(m, GATLayer):
+            nn.init.xavier_uniform_(m.W.weight)
+            nn.init.xavier_uniform_(m.a_src)
+            nn.init.xavier_uniform_(m.a_dst)
+
+    def forward(self, X):
+        X = self.embedding(X)
+        X = self.gat1(self.A, X)
+        X = self.gat2(self.A, X)
+        X = self.gat3(self.A, X)
+        return X
 
 
 # GCN Layer 정의
@@ -188,6 +269,8 @@ class PPO(nn.Module):
             self.gnn = GCNModel1(self.input_dim,self.hidden_dim,self.A).to(device)
         if mod=='GCN2':
             self.gnn = GCNModel2(self.input_dim,self.hidden_dim,self.U,self.D,self.R,self.L).to(device)
+        if mod=='GAT':
+            self.gnn=GATModel(self.input_dim,self.hidden_dim,self.A,num_head=2)
         self.Actor_net = Actor_net(self.hidden_dim+self.lookahead_block_num*feature_dim).to(device)
         self.Critic_net = Critic_net(self.r*self.c*self.hidden_dim+self.lookahead_block_num*feature_dim+1).to(device)
         if mod=='MLP':
@@ -255,7 +338,7 @@ class PPO(nn.Module):
         b,r,c,f=grids.shape #blocks b, lookahead*featuredim
         blocks=blocks.reshape(b,-1)
         
-        if self.mod=='GCN1' or self.mod=='GCN2':
+        if self.mod=='GCN1' or self.mod=='GCN2' or self.mod=='GAT':
             new_grids=grids.reshape(b,-1,f)
             blocks_expanded = blocks.unsqueeze(1).repeat(1, r*c, 1)  # (b, r*c, lookahead*featuredim)
             if ans!= None:
@@ -294,7 +377,7 @@ class PPO(nn.Module):
         b,r,c,f=grids.shape #blocks b, lookahead*featuredim
         blocks=blocks.reshape(b,-1)
 
-        if self.mod=='GCN1' or self.mod=='GCN2':
+        if self.mod=='GCN1' or self.mod=='GCN2' or self.mod=='GAT':
             new_grids=grids.reshape(b,-1,f)
             output_vector=self.gnn(new_grids) #b,r*c,hidden_dim
             output_vector=output_vector.reshape(b,-1)
