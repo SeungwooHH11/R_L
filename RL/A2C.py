@@ -77,7 +77,7 @@ for episode in range(num_episodes):
         action, log_prob = agent.select_action(state)
         next_state, reward, done = env.step(action)
 
-        _, value = agent.model(torch.FloatTensor(state.flatten()).unsqueeze(0))
+        _, value = agent.model(torch.FloatTensor(state.flatten()).unsqueeze(0).to(device))
 
         log_probs.append(torch.log(log_prob))
         values.append(value.squeeze())
