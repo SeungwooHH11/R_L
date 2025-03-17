@@ -57,7 +57,7 @@ class GATLayer(nn.Module):
 
         # Apply softmax normalization
         attn_matrix = F.softmax(attn_matrix, dim=2)
-        attn_matrix = self.dropout(attn_matrix)  # (b, n, n, heads)
+        #attn_matrix = self.dropout(attn_matrix)  # (b, n, n, heads)
 
         # Apply attention mechanism
         out = torch.einsum("bnnk,bnkd->bnkd", attn_matrix, X_split)  # (b, n, heads, out_dim)
