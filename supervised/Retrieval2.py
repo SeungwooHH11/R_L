@@ -341,7 +341,7 @@ def Retrieval(grid,TP_capacity,target_block,ppo,step,grids,blocks,block_lefts,bl
     ispossible,path,area_left,count,path_label,added_label,labeled_grid,label_num=path_finder(input_grid.copy(),target_block)
     if ispossible==False:
         rearrange_num=0
-        return ispossible,rearrange_num,grid,step,grids,blocks,actions,rewards,dones,masks,probs
+        return ispossible,rearrange_num,grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts
     total_area=[]
     for label in added_label:
         total_area=list(np.array(np.where(labeled_grid==label)).T)+total_area
