@@ -374,7 +374,7 @@ if __name__=="__main__":
     ASR_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='BLF')
-    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=pr_size, learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='MLP').to(device)
+    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=pr_size, learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN2').to(device)
     '''
     checkpoint = torch.load(input_dir+'DGCN_supervised.pth',map_location=torch.device('cuda'))  # 파일에서 로드할 경우
     full_state_dict = checkpoint['model_state_dict']
@@ -384,6 +384,6 @@ if __name__=="__main__":
     # 필터링된 가중치만 로드
     ppo.load_state_dict(filtered_state_dict, strict=False)
     '''
-    history=ST_sim.Train(train_step=100,eval_step=20,K=2,pr_num=10,batch_num=40,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
+    history=ST_sim.Train(train_step=1000,eval_step=20,K=2,pr_num=10,batch_num=40,simulation_day=10,lookahead_num=1,ppo=ppo,model_dir='',ASR_1=ASR_1,Random_1=Random_1,BLF_1=BLF_1)
     history=pd.DataFrame(history)
     history.to_excel('history.xlsx', sheet_name='Sheet', index=False)
