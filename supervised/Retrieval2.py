@@ -328,7 +328,7 @@ def classify_grid(grid, TP_capacity,goal): #
         for j in range(c):
             if grid[i, j, 1+M] == 1:
                 classified_grid[i, j] = -1
-            elif grid[i,j,1:1+M].sum()>0:
+            elif grid[i,j,1+M:].sum()>0:
                 classified_grid[i, j] = -2
             else:
                 classified_grid[i, j] = 0
