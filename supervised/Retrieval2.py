@@ -67,7 +67,7 @@ def search_path(result,grid):
         if grid[current[0],current[1]]==-1:
             rearrange_count+=1
         
-        temp=np.zeros(4)
+        temp=np.ones(4)*-100
         step=0
         def is_valid(x, y):
             return 0 <= x < result.shape[0] and 0 <= y < result.shape[1]
