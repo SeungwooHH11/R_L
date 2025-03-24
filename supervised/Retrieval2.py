@@ -175,6 +175,42 @@ def bfs_area(final_grid, grid, start,path): #visited, gird, goal
     
     return obstacle,free_space
 
+
+def Create_locate_mask(grid,  TP_type_len):
+    r, c, f = grid.shape
+    mask = (grid[:, :, 1:1 + TP_type_len].sum(axis=2) > 0).astype(np.uint8)  # 첫 번째 열이 0 초과인 위치를 1로 설정
+    mask = mask[:, :, np.newaxis].copy()
+    mask = mask.reshape(r, c)
+    rows, cols = len(mask), len(mask[0])
+    visited = [[False] * cols for _ in range(rows)]  # 방문 여부 기록
+    new_grid = [[1] * cols for _ in range(rows)]  # 모든 값을 1로 초기화
+
+    # BFS를 위한 큐
+    queue = deque()
+
+    # Step 1: 첫 번째 행에서 0을 찾고 BFS 시작
+    for x in range(cols):
+        if mask[0][x] == 0:
+            queue.append((0, x))
+            visited[0][x] = True  # 방문 체크
+            new_grid[0][x] = 0  # 그대로 유지
+
+    # BFS 탐색 (상, 하, 좌, 우)
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    while queue:
+        y, x = queue.popleft()
+
+        for dy, dx in directions:
+            ny, nx = y + dy, x + dx
+
+            if 0 <= ny < rows and 0 <= nx < cols and not visited[ny][nx] and mask[ny][nx] == 0:
+                queue.append((ny, nx))
+                visited[ny][nx] = True
+                new_grid[ny][nx] = 0  # 유지
+    new_grid = np.array(new_grid)
+
+    return new_grid
 def bfs_path_exists(grid, start, goal):
     start=start.copy()
     goal=goal.copy()
@@ -205,7 +241,7 @@ def Create_mask(grid,TP_type_len):
     return mask[:, :, np.newaxis]  
 
 
-def retrieval(final_grid,input_grid,state_grid,target_block,path,ppo,step,grids,blocks,block_lefts,block_left_num,rewards,actions,dones,masks,probs,lookahead_num,TP_type_len):
+def retrieval(final_grid,input_grid,state_grid,target_block,path,ppo,step,grids,blocks,block_lefts,block_left_num,rewards,actions,dones,masks,probs,lookahead_num,TP_type_len,rt_mod):
     do=0
     stock=[]
     obstacles_set=[]
@@ -282,8 +318,28 @@ def retrieval(final_grid,input_grid,state_grid,target_block,path,ppo,step,grids,
             input_grid[target_obstacle[0]][target_obstacle[1]]=0
             #print('Obstacle at ',target_obstacle)
             #print('to', target_space)
+    if rt_mod=='OR':
+        state_grid[goal[0],goal[1],:]=0
+        final_grid[goal[0], goal[0]] = 1
+        input_grid[goal[0], goal[1]] = 0
     for e,ob in enumerate(stock):
-        mask=Create_mask(state_grid,TP_type_len)
+        can=[]
+        mask = Create_locate_mask(state_grid, TP_type_len)  # r,c
+        zero_positions = np.argwhere(mask == 0)
+        obstacle_left = len(stock) - e - 1
+        for row_num, col_num in zero_positions:
+            temp_grid = state_grid.copy()
+
+            temp_grid[row_num, col_num, :-1] = ob.copy()
+            mask = Create_locate_mask(temp_grid, TP_type_len)  # r,c
+            new_zero_positions = np.argwhere(mask == 0)
+            can.append(min(len(new_zero_positions) - obstacle_left, 0))
+        max_value = max(can)  # 최대 값 찾기
+        max_indices = [index for index, value in enumerate(can) if value == max_value]
+        # maks 1, r*c, 1
+        final_mask = np.ones((input_grid.shape[0], input_grid.shape[1]))
+        for ind in max_indices:
+            final_mask[zero_positions[ind][0], zero_positions[ind][1]] = 0
         blocks_vec=np.zeros((lookahead_num,TP_type_len+1))
         blocks_vec[:,0]=250
         blocks_vec[:,1:1+int((1+TP_type_len)/2.0)]=1
@@ -292,14 +348,14 @@ def retrieval(final_grid,input_grid,state_grid,target_block,path,ppo,step,grids,
         block_lefts.append(block_left_num)
         grids.append(state_grid.copy())
         blocks.append(blocks_vec.copy())
-        masks.append(mask.reshape(-1,1).copy())
-        mask=torch.tensor(mask.reshape(1,-1,1),dtype=torch.float32).to(device)
+        masks.append(final_mask.reshape(-1,1).copy())
+        final_mask=torch.tensor(final_mask.reshape(1,-1,1),dtype=torch.float32).to(device)
         state_grid_tensor=torch.tensor(state_grid[:,:,:-1].reshape(1,state_grid.shape[0],state_grid.shape[1],-1),dtype=torch.float32).to(device)
         state_grid_tensor[:,:,0]=state_grid_tensor[:,:,0]/500.0
         blocks_vec_tensor=torch.tensor(blocks_vec.reshape(1,lookahead_num,-1),dtype=torch.float32).to(device)
         blocks_vec_tensor[:,:,0]=blocks_vec_tensor[:,:,0]/500.0
         
-        pr,target_space=ppo.Locate(state_grid_tensor,blocks_vec_tensor,mask,ans=None)   
+        pr,target_space=ppo.Locate(state_grid_tensor,blocks_vec_tensor,final_mask,ans=None)
         
         target_r=target_space.item()//input_grid.shape[0]
         target_c=target_space.item()%input_grid.shape[1]
@@ -335,7 +391,7 @@ def classify_grid(grid, TP_capacity,goal): #
     classified_grid[goal[0]][goal[1]]=1
     
     return classified_grid
-def Retrieval(grid,TP_capacity,target_block,ppo,step,grids,blocks,block_lefts,block_left_num,actions,rewards,dones,masks,probs,lookahead_num,TP_type_len):
+def Retrieval(grid,TP_capacity,target_block,ppo,step,grids,blocks,block_lefts,block_left_num,actions,rewards,dones,masks,probs,lookahead_num,TP_type_len,rt_mod):
     #grid r,c, 2+TP_type
     input_grid=classify_grid(grid,TP_capacity,target_block)
     ispossible,path,area_left,count,path_label,added_label,labeled_grid,label_num=path_finder(input_grid.copy(),target_block)
@@ -354,12 +410,12 @@ def Retrieval(grid,TP_capacity,target_block,ppo,step,grids,blocks,block_lefts,bl
         final_grid[x][y]=1 # 초기 확정 area
     #final_grid=space_finder(input_grid,path,area_left,count,path_label,labeled_grid,label_num,added_label)
     
-    rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=retrieval(final_grid,input_grid,grid.copy(),target_block,path,ppo,step,grids,blocks,block_lefts,block_left_num,rewards,actions,dones,masks,probs,lookahead_num,TP_type_len)
+    rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=retrieval(final_grid,input_grid,grid.copy(),target_block,path,ppo,step,grids,blocks,block_lefts,block_left_num,rewards,actions,dones,masks,probs,lookahead_num,TP_type_len,rt_mod)
     
     return ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts
 
 def Count_retrieval(grid,TP_capacity,target_block):
     input_grid=classify_grid(grid,TP_capacity,target_block)
     ispossible,path,area_left,count,path_label,added_label,labeled_grid,label_num=path_finder(input_grid.copy(),target_block)
-    return count
+    return count,ispossible
 
