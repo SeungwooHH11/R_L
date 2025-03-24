@@ -96,7 +96,7 @@ class Stockyard_simulation:
             check_num=np.zeros(len(check_list))
 
             for e,space in enumerate(check_list):
-                count=Count_retrieval(grid,TP_capa,space)
+                count,_=Count_retrieval(grid,TP_capa,space)
                 check_num[e]=count
             min_value=check_num.min()
             index=np.argwhere(check_num==min_value).flatten()
