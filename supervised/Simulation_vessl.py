@@ -210,7 +210,7 @@ class Stockyard_simulation:
                 grid[r,c,1:-1]=total_block_encoded[e,1:]
                 grid[r,c,-1]=step
                 if need_retrieval:
-                    ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=Retrieval(grid.copy(),len(self.TP_type)-1,target_block.copy(),ppo,step,grids,blocks,block_lefts,block_left_num,actions,rewards,dones,masks,probs,lookahead_num,len(self.TP_type))
+                    ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=Retrieval(grid.copy(),len(self.TP_type)-1,target_block.copy(),ppo,step,grids,blocks,block_lefts,block_left_num,actions,rewards,dones,masks,probs,lookahead_num,len(self.TP_type),'NOR')
                     total_rearrangement+=rearrange_num
                     grid=end_grid.copy()
             
@@ -229,12 +229,11 @@ class Stockyard_simulation:
                 TP_type_len=len(self.TP_type)
                 
                 TP_capacity=np.random.randint(TP_type_len-grid[target_r,target_c,1:-1].sum(),TP_type_len)
-                ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=Retrieval(grid,TP_capacity,target_block,ppo,step,grids,blocks,block_lefts,block_left_num,actions,rewards,dones,masks,probs,lookahead_num,TP_type_len)
+                ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=Retrieval(grid,TP_capacity,target_block,ppo,step,grids,blocks,block_lefts,block_left_num,actions,rewards,dones,masks,probs,lookahead_num,TP_type_len,'OR')
                 while ispossible==False:
                     TP_capacity=np.random.randint(TP_type_len-grid[target_r,target_c,1:-1].sum(),TP_type_len)
-                    ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=Retrieval(grid,TP_capacity,target_block,ppo,step,grids,blocks,block_lefts,block_left_num,actions,rewards,dones,masks,probs,lookahead_num,TP_type_len)
+                    ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=Retrieval(grid,TP_capacity,target_block,ppo,step,grids,blocks,block_lefts,block_left_num,actions,rewards,dones,masks,probs,lookahead_num,TP_type_len,'OR')
                 
-                end_grid[target_r,target_c,:]=0
                 total_rearrangement+=rearrange_num
                 grid=end_grid.copy()
                 
