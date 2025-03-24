@@ -54,7 +54,7 @@ class GCNModel1(nn.Module):
         X = self.gcn1(self.A, X)/4.0
         X = self.gcn2(self.A, X)/4.0
         X = self.gcn3(self.A, X)/4.0
-        X = self.gcn4(self.A, X)/4.0
+        #X = self.gcn4(self.A, X)/4.0
         #X = self.gcn5(self.A, X)/4.0
         
         return X
@@ -79,7 +79,7 @@ class GCNModel2(nn.Module):
 
     def forward(self, X):
         X = self.embedding(X)
-        for i in range(0, 16, 4):
+        for i in range(0, 12, 4):
             X = (
                 self.gcn_layers[i](self.U, X) +
                 self.gcn_layers[i+1](self.D, X) +
