@@ -164,7 +164,7 @@ class Stockyard_simulation:
         block_left_num=max_length
         for i in range(simulation_day):
             block_located = total_block_encoded[block_num:block_num+len(total_block[i])]
-            block_num+=len(total_block[i])
+            
             #print(len(block_located), 'located')
             #total_block = total_block[total_block[:, 0] > 100*(i+1)]
             for e,row in enumerate(block_located):
@@ -175,7 +175,7 @@ class Stockyard_simulation:
                 grids.append(grid.copy())
                 block_lefts.append(block_left_num)
                 block_left_num -= 1
-                blocks_vec=total_block_encoded[e:int(min(e+lookahead_num,max_length)),:].copy()
+                blocks_vec=total_block_encoded[block_num+e:int(min(block_num+e+lookahead_num,max_length)),:].copy()
                 if len(blocks_vec)<lookahead_num:
                     blocks_vec_temp=np.zeros((lookahead_num,1+len(self.TP_type)))
                     blocks_vec_temp[:,0]=250
@@ -206,8 +206,8 @@ class Stockyard_simulation:
                 
                 step+=1
                 #적치
-                grid[r,c,0]=total_block_encoded[e,0]
-                grid[r,c,1:-1]=total_block_encoded[e,1:]
+                grid[r,c,0]=total_block_encoded[block_num+e,0]
+                grid[r,c,1:-1]=total_block_encoded[block_num+e,1:]
                 grid[r,c,-1]=step
                 if need_retrieval:
                     ispossible,rearrange_num,end_grid,step,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=Retrieval(grid.copy(),len(self.TP_type)-1,target_block.copy(),ppo,step,grids,blocks,block_lefts,block_left_num,actions,rewards,dones,masks,probs,lookahead_num,len(self.TP_type),'NOR')
@@ -240,7 +240,7 @@ class Stockyard_simulation:
                 
             grid[:, :, 0] -= 100
             grid[:, :, 0] = np.maximum(grid[:, :, 0], 0)
-            
+            block_num+=len(total_block[i])
         dones[-1]=1
         return total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts
 
