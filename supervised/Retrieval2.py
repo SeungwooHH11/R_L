@@ -93,12 +93,8 @@ def cal_area(path,labeled_grid,grid,label_num,input_dp):
     path_label=[]
     added_label=[]
     movements = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    area_left=0
-    before_label=1
     for i in path:
         if grid[i[0],i[1]]==-1:
-            indices = np.where(labeled_grid == before_label)
-            dp[indices]+=0.1*min(0,area_left)
             area_required+=2
             area_able+=1
             for dx,dy in movements:
@@ -117,7 +113,8 @@ def cal_area(path,labeled_grid,grid,label_num,input_dp):
                 path_label.append(labeled_grid[i[0],i[1]])
                 area_able+=label_num[int(labeled_grid[i[0],i[1]])]
     area_left=area_able-area_required
-            
+    for j in path:
+        dp[j[0], j[1]] += 0.1 * min(0, area_left)
     return area_able, area_required,area_left,dp,path_label,added_label
 
 def path_finder(grid,goal):
