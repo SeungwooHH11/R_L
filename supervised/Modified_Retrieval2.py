@@ -103,7 +103,7 @@ def backtracking_dp_with_free_space(grid, goal, labeled_grid, label_num):
                     matrix[nx][ny] = matrix[nx + ndx][ny + ndy].copy()
 
                     if labeled_grid[nx, ny] not in matrix[nx + ndx][ny + ndy]:
-                        free_space[nx, ny] += label_num[labeled_grid[nx, ny]]
+                        free_space[nx, ny] += label_num[int(labeled_grid[nx, ny])]
                         matrix[nx][ny].append(labeled_grid[nx, ny].copy())
                     new_cost = dp[nx + ndx][ny + ndy] - 0.001
                 if grid[nx][ny] == -1:
@@ -122,7 +122,7 @@ def backtracking_dp_with_free_space(grid, goal, labeled_grid, label_num):
 
 def search_path(result, grid):
     start = [0, np.argmax(result[0, :])]
-    print(result)
+    
     rearrange_count = 9 - int(result[start[0], start[1]] * 10)
     if result[start[0], start[1]] * 100 % 10 == 0:
         rearrange_count += 1
