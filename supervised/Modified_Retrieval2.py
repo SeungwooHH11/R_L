@@ -130,7 +130,7 @@ def search_path(result, grid):
     path = [current.copy()]
     movements = [(-1, 0), (1, 0), (0, -1), (0, 1)]
     while result[current[0], current[1]] != 1:
-        temp = np.zeros(4)
+        temp = np.ones(4)*-100
         step = 0
 
         def is_valid(x, y):
