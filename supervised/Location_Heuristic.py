@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from Retrieval2 import *
+from Modified_Retrieval2 import *
 
 class Heuristic():
     def __init__(self, grid_size,TP_type_len,mod):
