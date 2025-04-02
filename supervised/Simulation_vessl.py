@@ -1,5 +1,5 @@
 import numpy as np
-from Retrieval2 import *
+from Modified_Retrieval2 import *
 from Location import *
 
 from Location_Heuristic import *
