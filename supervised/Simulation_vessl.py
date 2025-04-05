@@ -374,11 +374,11 @@ if __name__=="__main__":
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed) 
-    ST_sim=Stockyard_simulation(yard_size=pr_size,initial_block=init_block,lam=1/250,weight=(1,501),TP_type=[300,400,550],Block_per_Day=bpd,mod=0)
-    ASR_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='ASR')
-    Random_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='Random')
-    BLF_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='BLF')
-    ppo=PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1,grid_size=pr_size, learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN1').to(device)
+    ST_sim=Stockyard_simulation(yard_size=pr_size,initial_block=init_block,lam=1/250,weight=(1,501),TP_type=[300,550],Block_per_Day=bpd,mod=0)
+    ASR_1=Heuristic(grid_size=pr_size,TP_type_len=2,mod='ASR')
+    Random_1=Heuristic(grid_size=pr_size,TP_type_len=2,mod='Random')
+    BLF_1=Heuristic(grid_size=pr_size,TP_type_len=2,mod='BLF')
+    ppo=PPO(feature_dim=3, hidden_dim=32, lookahead_block_num=1,grid_size=pr_size, learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN2').to(device)
     '''
     checkpoint = torch.load(input_dir+'DGCN_supervised.pth',map_location=torch.device('cuda'))  # 파일에서 로드할 경우
     full_state_dict = checkpoint['model_state_dict']
