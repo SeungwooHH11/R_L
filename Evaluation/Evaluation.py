@@ -478,9 +478,9 @@ if __name__=="__main__":
     if not os.path.exists(input_dir):
         os.makedirs(input_dir)
     device='cuda'
-    pr_size=(5,5)
-    init_block=5
-    bpd=(10,14)
+    pr_size=(7,7)
+    init_block=10
+    bpd=(20,28)
     seed=1
     np.random.seed(seed)
     torch.manual_seed(seed)
