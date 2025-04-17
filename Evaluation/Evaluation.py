@@ -4,7 +4,7 @@ from Location import *
 
 from Location_Heuristic import *
 from collections import OrderedDict
-
+import vessl
 
 class Stockyard_simulation:
     def __init__(self,yard_size,initial_block,lam,weight,TP_type,Block_per_Day,mod):
@@ -247,7 +247,7 @@ class Stockyard_simulation:
 
 
 
-    def Evaluation(self,pr_num,batch_num,simulation_day,lookahead_num,ppo,ASR_1,Random_1,BLF_1):
+    def Evaluation(self,pr_num,batch_num,simulation_day,lookahead_num,ppo,ASR_1,Random_1,BLF_1,input_dir):
         eval_set=[]
         history = np.zeros((15,pr_num,batch_num))
         for _ in range(pr_num):
@@ -296,7 +296,7 @@ class Stockyard_simulation:
         ppo = PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1, grid_size=pr_size, learning_rate=0.001,
                   lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GAT').to(device)
 
-        checkpoint = torch.load('GAT_RL.pth', map_location=torch.device('cuda'))  # 파일에서 로드할 경우
+        checkpoint = torch.load(input_dir+'GAT_RL.pth', map_location=torch.device('cuda'))  # 파일에서 로드할 경우
         full_state_dict = checkpoint['model_state_dict']
         filtered_state_dict = OrderedDict({k: v for k, v in full_state_dict.items() if 'Critic_net' not in k})
         ppo.load_state_dict(filtered_state_dict, strict=False)
@@ -349,7 +349,7 @@ class Stockyard_simulation:
         ppo = PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1, grid_size=pr_size, learning_rate=0.001,
                   lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN2').to(device)
 
-        checkpoint = torch.load('DGCN_RL.pth', map_location=torch.device('cuda'))  # 파일에서 로드할 경우
+        checkpoint = torch.load(input_dir+'DGCN_RL.pth', map_location=torch.device('cuda'))  # 파일에서 로드할 경우
         full_state_dict = checkpoint['model_state_dict']
         filtered_state_dict = OrderedDict({k: v for k, v in full_state_dict.items() if 'Critic_net' not in k})
         ppo.load_state_dict(filtered_state_dict, strict=False)
@@ -406,7 +406,7 @@ class Stockyard_simulation:
         ppo = PPO(feature_dim=4, hidden_dim=32, lookahead_block_num=1, grid_size=pr_size, learning_rate=0.001,
                   lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, mod='GCN1').to(device)
 
-        checkpoint = torch.load('GCN_RL.pth', map_location=torch.device('cuda'))  # 파일에서 로드할 경우
+        checkpoint = torch.load(input_dir+'GCN_RL.pth', map_location=torch.device('cuda'))  # 파일에서 로드할 경우
         full_state_dict = checkpoint['model_state_dict']
         filtered_state_dict = OrderedDict({k: v for k, v in full_state_dict.items() if 'Critic_net' not in k})
         ppo.load_state_dict(filtered_state_dict, strict=False)
@@ -459,9 +459,9 @@ class Stockyard_simulation:
                 history[12, pr_num, bn] = total_rearrangement
         print('GCN SL with random retrieval', ave_rearrangement / pr_num / batch_num)
         '''
-        np.save('result3.npy', history)
 
-        return
+
+        return history
 
 if __name__=="__main__":
     problem_dir='/output/problem_set/'
@@ -479,7 +479,7 @@ if __name__=="__main__":
     device='cuda'
     pr_size=(15,15)
     init_block=45
-    bpd=(45,63)
+    bpd=(72,90)
     seed=1
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -490,4 +490,5 @@ if __name__=="__main__":
     Random_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='BLF')
     ppo=0
-    ST_sim.Evaluation(10,10,10,1,ppo,ASR_1,Random_1,BLF_1)
+    history=ST_sim.Evaluation(10,10,10,1,ppo,ASR_1,Random_1,BLF_1,input_dir)
+    np.save(model_dir+'result.npy', history)
