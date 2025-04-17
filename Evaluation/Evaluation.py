@@ -280,6 +280,7 @@ class Stockyard_simulation:
                 total_rearrangement,grids,blocks,actions,rewards,dones,masks,probs,block_lefts=self.Run_simulation(simulation_day,lookahead_num,Random_1,ev_set[0].copy(),ev_set[1].copy(),ev_set[2].copy(),'RL')
                 ave_rearrangement+=total_rearrangement
                 history[1,pr_num,bn]=total_rearrangement
+            print('one end')
         print('Random ',ave_rearrangement/pr_num/batch_num)
 
         ave_rearrangement=0
@@ -479,13 +480,13 @@ if __name__=="__main__":
     device='cuda'
     pr_size=(15,15)
     init_block=45
-    bpd=(90,126)
+    bpd=(45,63)
     seed=1
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed) 
-    ST_sim=Stockyard_simulation(yard_size=pr_size,initial_block=init_block,lam=0.006,weight=(1,501),TP_type=[300,400,550],Block_per_Day=bpd,mod=0)
+    ST_sim=Stockyard_simulation(yard_size=pr_size,initial_block=init_block,lam=0.004,weight=(1,501),TP_type=[300,400,550],Block_per_Day=bpd,mod=0)
     ASR_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='BLF')
