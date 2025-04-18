@@ -478,15 +478,15 @@ if __name__=="__main__":
     if not os.path.exists(input_dir):
         os.makedirs(input_dir)
     device='cuda'
-    pr_size=(15,15)
-    init_block=45
-    bpd=(18,36)
+    pr_size=(12,12)
+    init_block=30
+    bpd=(30,42)
     seed=1
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed) 
-    ST_sim=Stockyard_simulation(yard_size=pr_size,initial_block=init_block,lam=0.002,weight=(1,501),TP_type=[300,400,550],Block_per_Day=bpd,mod=0)
+    ST_sim=Stockyard_simulation(yard_size=pr_size,initial_block=init_block,lam=0.004,weight=(1,501),TP_type=[300,400,550],Block_per_Day=bpd,mod=0)
     ASR_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='ASR')
     Random_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='Random')
     BLF_1=Heuristic(grid_size=pr_size,TP_type_len=3,mod='BLF')
