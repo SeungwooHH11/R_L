@@ -480,7 +480,7 @@ if __name__=="__main__":
     device='cuda'
     pr_size=(7,7)
     init_block=10
-    bpd=(10,14)
+    bpd=(6,10)
     seed=1
     np.random.seed(seed)
     torch.manual_seed(seed)
