@@ -371,7 +371,7 @@ if __name__=="__main__":
       
     device='cuda'
     pr_size=(7,7)
-    bpd=(12,14)
+    bpd=(10,14)
     init_block=10
     ST_sim=Stockyard_simulation(yard_size=pr_size,initial_block=init_block,lam=1/250,weight=(1,501),TP_type=[300,400,550],Block_per_Day=bpd,mod=0)
 
