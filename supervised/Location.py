@@ -19,48 +19,62 @@ class MultiHeadGATLayerMerged(nn.Module):
         self.directions = ['U', 'D', 'R', 'L']
         self.num_heads = num_heads
         self.out_dim = out_dim
+
         self.W = nn.ModuleDict()
         self.attn = nn.ParameterDict()
+
         for d in self.directions:
-            self.W[d] = nn.ModuleList([nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_heads)])
-            self.attn[d] = nn.ParameterList([nn.Parameter(torch.empty(size=(2 * out_dim, 1))) for _ in range(num_heads)])
+            self.W[d] = nn.ModuleList([
+                nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_heads)
+            ])
+            self.attn[d] = nn.ParameterList([
+                nn.Parameter(torch.empty(2 * out_dim)) for _ in range(num_heads)
+            ])
             for a in self.attn[d]:
-                nn.init.xavier_uniform_(a.data, gain=1.414)
+                nn.init.xavier_uniform_(a.data.view(2, -1), gain=1.414)
 
     def forward(self, x, A_dict):
+        """
+        x: (B, N, F)
+        A_dict: {'U': (N, N), ...}
+        """
         B, N, _ = x.size()
         device = x.device
         e_total = torch.full((B, N, N), float('-inf'), device=device)
         Wh_dict = {}
 
-        # 각 방향 및 head에 대해 attention score 계산
         for d in self.directions:
             Wh_dict[d] = []
             for h in range(self.num_heads):
                 Wh = self.W[d][h](x)  # (B, N, F')
                 Wh_dict[d].append(Wh)
-                h_i = Wh.unsqueeze(2).expand(-1, -1, N, -1)
-                h_j = Wh.unsqueeze(1).expand(-1, N, -1, -1)
-                cat = torch.cat([h_i, h_j], dim=3)
-                e = F.leaky_relu(torch.matmul(cat, self.attn[d][h]).squeeze(-1))
-                A = A_dict[d].unsqueeze(0).expand(B, -1, -1)
+
+                a = self.attn[d][h]  # (2F')
+                a_src, a_dst = a[:self.out_dim], a[self.out_dim:]
+
+                # Efficient attention score computation
+                e_src = torch.einsum('bnd,d->bn', Wh, a_src)  # (B, N)
+                e_dst = torch.einsum('bnd,d->bn', Wh, a_dst)  # (B, N)
+                e = F.leaky_relu(e_src.unsqueeze(2) + e_dst.unsqueeze(1))  # (B, N, N)
+
+                A = A_dict[d].unsqueeze(0).expand(B, -1, -1)  # (B, N, N)
                 e = e.masked_fill(A == 0, float('-inf'))
                 e_total = torch.where(A.bool(), e, e_total)
 
-        # 통합 softmax
+        # Shared softmax across all directions and heads
         alpha = F.softmax(e_total, dim=2)  # (B, N, N)
 
-        # 메시지 집계
+        # Message passing
         out = torch.zeros(B, N, self.out_dim, device=device)
         for d in self.directions:
-            A = A_dict[d].unsqueeze(0).expand(B, -1, -1)
+            A = A_dict[d].unsqueeze(0).expand(B, -1, -1)  # (B, N, N)
             alpha_d = alpha * A
             for h in range(self.num_heads):
-                Wh = Wh_dict[d][h]
-                out += torch.bmm(alpha_d, Wh)
-        out = out / self.num_heads  # head 평균
-        return out
+                out += torch.bmm(alpha_d, Wh_dict[d][h])  # (B, N, F')
 
+        out = out / self.num_heads
+        return out
+        
 class GATModel2(nn.Module):
     def __init__(self, input_dim, hidden_dim, Up_A_hat, Down_A_hat, Right_A_hat, Left_A_hat, num_heads=2):
         super().__init__()
