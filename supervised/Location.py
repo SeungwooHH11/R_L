@@ -12,6 +12,74 @@ device = 'cuda'
 np.random.seed(1)
 random.seed(1)
 torch.manual_seed(1)
+
+class MultiHeadGATLayerMerged(nn.Module):
+    def __init__(self, in_dim, out_dim, num_heads=2):
+        super().__init__()
+        self.directions = ['U', 'D', 'R', 'L']
+        self.num_heads = num_heads
+        self.out_dim = out_dim
+        self.W = nn.ModuleDict()
+        self.attn = nn.ParameterDict()
+        for d in self.directions:
+            self.W[d] = nn.ModuleList([nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_heads)])
+            self.attn[d] = nn.ParameterList([nn.Parameter(torch.empty(size=(2 * out_dim, 1))) for _ in range(num_heads)])
+            for a in self.attn[d]:
+                nn.init.xavier_uniform_(a.data, gain=1.414)
+
+    def forward(self, x, A_dict):
+        B, N, _ = x.size()
+        device = x.device
+        e_total = torch.full((B, N, N), float('-inf'), device=device)
+        Wh_dict = {}
+
+        # 각 방향 및 head에 대해 attention score 계산
+        for d in self.directions:
+            Wh_dict[d] = []
+            for h in range(self.num_heads):
+                Wh = self.W[d][h](x)  # (B, N, F')
+                Wh_dict[d].append(Wh)
+                h_i = Wh.unsqueeze(2).expand(-1, -1, N, -1)
+                h_j = Wh.unsqueeze(1).expand(-1, N, -1, -1)
+                cat = torch.cat([h_i, h_j], dim=3)
+                e = F.leaky_relu(torch.matmul(cat, self.attn[d][h]).squeeze(-1))
+                A = A_dict[d].unsqueeze(0).expand(B, -1, -1)
+                e = e.masked_fill(A == 0, float('-inf'))
+                e_total = torch.where(A.bool(), e, e_total)
+
+        # 통합 softmax
+        alpha = F.softmax(e_total, dim=2)  # (B, N, N)
+
+        # 메시지 집계
+        out = torch.zeros(B, N, self.out_dim, device=device)
+        for d in self.directions:
+            A = A_dict[d].unsqueeze(0).expand(B, -1, -1)
+            alpha_d = alpha * A
+            for h in range(self.num_heads):
+                Wh = Wh_dict[d][h]
+                out += torch.bmm(alpha_d, Wh)
+        out = out / self.num_heads  # head 평균
+        return out
+
+class GATModel2(nn.Module):
+    def __init__(self, input_dim, hidden_dim, Up_A_hat, Down_A_hat, Right_A_hat, Left_A_hat, num_heads=2):
+        super().__init__()
+        self.embedding = nn.Linear(input_dim, hidden_dim)
+        self.gat_layers = nn.ModuleList([MultiHeadGATLayerMerged(hidden_dim, hidden_dim, num_heads) for _ in range(3)])
+        self.a = nn.Parameter(torch.tensor(0.8, dtype=torch.float32))
+        self.A_dict = {'U': Up_A_hat, 'D': Down_A_hat, 'R': Right_A_hat, 'L': Left_A_hat}
+        self.init_weights()
+
+    def init_weights(self):
+        nn.init.xavier_uniform_(self.embedding.weight)
+
+    def forward(self, X):
+        X = self.embedding(X)
+        for layer in self.gat_layers:
+            X = layer(X, self.A_dict) + self.a * X  # residual 연결
+        return X
+
+
 class GATLayer(nn.Module):
     def __init__(self, in_dim, out_dim, num_heads=1, dropout=0.2):
         super(GATLayer, self).__init__()
@@ -273,6 +341,8 @@ class PPO(nn.Module):
             self.gnn = GCNModel2(self.input_dim,self.hidden_dim,self.U,self.D,self.R,self.L).to(device)
         if mod=='GAT':
             self.gnn=GATModel(self.input_dim,self.hidden_dim,self.A,num_heads=2)
+        if mod=='GAT2':
+            self.gnn = GCNModel2(self.input_dim,self.hidden_dim,self.U,self.D,self.R,self.L,num_heads=2).to(device)
         self.Actor_net = Actor_net(self.hidden_dim+self.lookahead_block_num*feature_dim).to(device)
         self.Critic_net = Critic_net(self.r*self.c*self.hidden_dim+self.lookahead_block_num*feature_dim+1).to(device)
         if mod=='MLP':
@@ -340,7 +410,7 @@ class PPO(nn.Module):
         b,r,c,f=grids.shape #blocks b, lookahead*featuredim
         blocks=blocks.reshape(b,-1)
         
-        if self.mod=='GCN1' or self.mod=='GCN2' or self.mod=='GAT':
+        if self.mod=='GCN1' or self.mod=='GCN2' or self.mod=='GAT' or self.mod=='GAT2':
             new_grids=grids.reshape(b,-1,f)
             blocks_expanded = blocks.unsqueeze(1).repeat(1, r*c, 1)  # (b, r*c, lookahead*featuredim)
             if ans!= None:
@@ -379,7 +449,7 @@ class PPO(nn.Module):
         b,r,c,f=grids.shape #blocks b, lookahead*featuredim
         blocks=blocks.reshape(b,-1)
 
-        if self.mod=='GCN1' or self.mod=='GCN2' or self.mod=='GAT':
+        if self.mod=='GCN1' or self.mod=='GCN2' or self.mod=='GAT' or self.mod=='GAT2':
             new_grids=grids.reshape(b,-1,f)
             output_vector=self.gnn(new_grids) #b,r*c,hidden_dim
             output_vector=output_vector.reshape(b,-1)
@@ -433,12 +503,12 @@ class PPO(nn.Module):
         advantage_lst = torch.tensor(advantage_lst, dtype=torch.float32).to(device)
         i = 0
         for e,ep in enumerate(ep_len):
-            if e<1:
-                advantage = 0.0
-                for t in reversed(range(i, i + ep)):
-                    advantage = self.gamma * self.lmbda * advantage + delta[t][0]
-                    advantage_lst[t][0] = advantage
-                i += ep    
+        
+            advantage = 0.0
+            for t in reversed(range(i, i + ep)):
+                advantage = self.gamma * self.lmbda * advantage + delta[t][0]
+                advantage_lst[t][0] = advantage
+            i += ep    
         eps = 1e-8 
         ratio = torch.exp(torch.log(pi_cal) - torch.log(probs+eps))  # a/b == exp(log(a)-log(b))
 
