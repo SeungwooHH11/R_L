@@ -342,7 +342,7 @@ class PPO(nn.Module):
         if mod=='GAT':
             self.gnn=GATModel(self.input_dim,self.hidden_dim,self.A,num_heads=2)
         if mod=='GAT2':
-            self.gnn = GCNModel2(self.input_dim,self.hidden_dim,self.U,self.D,self.R,self.L,num_heads=2).to(device)
+            self.gnn = GATModel2(self.input_dim,self.hidden_dim,self.U,self.D,self.R,self.L,num_heads=2).to(device)
         self.Actor_net = Actor_net(self.hidden_dim+self.lookahead_block_num*feature_dim).to(device)
         self.Critic_net = Critic_net(self.r*self.c*self.hidden_dim+self.lookahead_block_num*feature_dim+1).to(device)
         if mod=='MLP':
