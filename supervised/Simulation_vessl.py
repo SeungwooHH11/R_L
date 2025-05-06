@@ -284,19 +284,20 @@ class Stockyard_simulation:
                 ave_rearrangement+=total_rearrangement
         print('BLF',ave_rearrangement/pr_num/batch_num)
         '''
-        grid, grid_save, init_blocks = self.Generate_grid(None)
-        total_block = []
-        for i in range(1, simulation_day + 1):
-            Created_blocks = self.Create_blocks()  # num,2
-            total_block.append(Created_blocks)
-        for e, block_by_day in enumerate(total_block):
-            if e == 0:
-                block_concat = block_by_day
-            else:
-                block_concat = np.concatenate((block_concat, block_by_day), axis=0)
-        total_block_encoded = self.block_encoding(block_concat, self.TP_type)
+        
 
         for tr_step in range(train_step):
+            grid, grid_save, init_blocks = self.Generate_grid(None)
+            total_block = []
+            for i in range(1, simulation_day + 1):
+                Created_blocks = self.Create_blocks()  # num,2
+                total_block.append(Created_blocks)
+            for e, block_by_day in enumerate(total_block):
+                if e == 0:
+                    block_concat = block_by_day
+                else:
+                    block_concat = np.concatenate((block_concat, block_by_day), axis=0)
+            total_block_encoded = self.block_encoding(block_concat, self.TP_type)
             ave_rearrangement=0
             gridss=[]
             blockss=[]
@@ -369,7 +370,7 @@ if __name__=="__main__":
     pr_size=(7,7)
     init_block=10
     bpd=(10,14)
-    seed=3
+    seed=0
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
