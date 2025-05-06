@@ -369,7 +369,7 @@ if __name__=="__main__":
     pr_size=(7,7)
     init_block=10
     bpd=(10,14)
-    seed=2
+    seed=3
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
