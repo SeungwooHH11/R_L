@@ -517,12 +517,12 @@ class PPO(nn.Module):
         advantage_lst = torch.tensor(advantage_lst, dtype=torch.float32).to(device)
         i = 0
         for e,ep in enumerate(ep_len):
-        
-            advantage = 0.0
-            for t in reversed(range(i, i + ep)):
-                advantage = self.gamma * self.lmbda * advantage + delta[t][0]
-                advantage_lst[t][0] = advantage
-            i += ep    
+            if e<1:
+                advantage = 0.0
+                for t in reversed(range(i, i + ep)):
+                    advantage = self.gamma * self.lmbda * advantage + delta[t][0]
+                    advantage_lst[t][0] = advantage
+                i += ep    
         eps = 1e-8 
         ratio = torch.exp(torch.log(pi_cal) - torch.log(probs+eps))  # a/b == exp(log(a)-log(b))
 
