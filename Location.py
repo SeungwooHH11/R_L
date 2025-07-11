@@ -12,8 +12,91 @@ device = 'cuda'
 np.random.seed(1)
 random.seed(1)
 torch.manual_seed(1)
+class GATLayer(nn.Module):
+    def __init__(self, in_dim, out_dim, num_heads=1, dropout=0.2):
+        super(GATLayer, self).__init__()
+        self.num_heads = num_heads
+        self.out_dim = out_dim // num_heads
+        
+        # Linear transformation for input feature
+        self.W = nn.Linear(in_dim, out_dim, bias=False)
+        
+        # Attention mechanism parameters
+        self.a_src = nn.Parameter(torch.zeros(size=(num_heads, self.out_dim)))
+        self.a_dst = nn.Parameter(torch.zeros(size=(num_heads, self.out_dim)))
 
+        # Initialize weights
+        nn.init.xavier_uniform_(self.W.weight)
+        nn.init.xavier_uniform_(self.a_src)
+        nn.init.xavier_uniform_(self.a_dst)
 
+        #self.dropout = nn.Dropout(dropout)
+
+    def forward(self, A, X):
+        """
+        A: Adjacency matrix (b, n, n)
+        X: Node features (b, n, f)
+        """
+        b, n, _ = X.shape  # Batch size, number of nodes
+
+        # Apply linear transformation
+        X_trans = self.W(X)  # (b, n, out_dim)
+
+        # Multi-head attention
+        X_split = X_trans.view(b, n, self.num_heads, self.out_dim)  # (b, n, heads, out_dim)
+
+        # Compute attention coefficients
+        attn_src = torch.einsum("bnhd,hd->bnh", X_split, self.a_src)  # (b, n, heads)
+        attn_dst = torch.einsum("bnhd,hd->bnh", X_split, self.a_dst)  # (b, n, heads)
+
+        attn_matrix = attn_src.unsqueeze(2) + attn_dst.unsqueeze(1)  # (b, n, n, heads)
+        attn_matrix = F.leaky_relu(attn_matrix, negative_slope=0.2)
+        
+        # Mask out non-existing edges (use adjacency matrix)
+        attn_matrix = attn_matrix.masked_fill(A.unsqueeze(-1) == 0, float("-inf"))
+
+        # Apply softmax normalization
+        attn_matrix = F.softmax(attn_matrix, dim=2)
+        #attn_matrix = self.dropout(attn_matrix)  # (b, n, n, heads)
+
+        # Apply attention mechanism
+        out = torch.einsum("bnnk,bnkd->bnkd", attn_matrix, X_split)  # (b, n, heads, out_dim)
+
+        # Concatenate multi-head results
+        out = out.reshape(b, n, -1)  # (b, n, out_dim * heads)
+        return out
+
+class GATModel(nn.Module):
+    def __init__(self, input_dim, hidden_dim, A_hat, num_heads=4):
+        super(GATModel, self).__init__()
+        self.embedding = nn.Linear(input_dim, hidden_dim)
+        self.gat1 = GATLayer(hidden_dim, hidden_dim, num_heads)
+        self.gat2 = GATLayer(hidden_dim, hidden_dim, num_heads)
+        self.gat3 = GATLayer(hidden_dim, hidden_dim, num_heads)
+        self.init_weights()
+        self.A = A_hat  # (b, n, n)
+
+    def init_weights(self):
+        nn.init.xavier_uniform_(self.embedding.weight)
+        for m in self.modules():
+            if isinstance(m, GATLayer):
+                m.apply(self._init_gat_weights)
+
+    def _init_gat_weights(self, m):
+        if isinstance(m, GATLayer):
+            nn.init.xavier_uniform_(m.W.weight)
+            nn.init.xavier_uniform_(m.a_src)
+            nn.init.xavier_uniform_(m.a_dst)
+
+    def forward(self, X):
+        """
+        X: (b, n, f) - Node feature matrix
+        """
+        X = self.embedding(X)  # (b, n, hidden_dim)
+        X = self.gat1(self.A, X) 
+        X = self.gat2(self.A, X) 
+        X = self.gat3(self.A, X) 
+        return X
 
 
 # GCN Layer 정의
@@ -188,11 +271,13 @@ class PPO(nn.Module):
             self.gnn = GCNModel1(self.input_dim,self.hidden_dim,self.A).to(device)
         if mod=='GCN2':
             self.gnn = GCNModel2(self.input_dim,self.hidden_dim,self.U,self.D,self.R,self.L).to(device)
+        if mod=='GAT':
+            self.gnn=GATModel(self.input_dim,self.hidden_dim,self.A,num_heads=2)
         self.Actor_net = Actor_net(self.hidden_dim+self.lookahead_block_num*feature_dim).to(device)
-        self.Critic_net = Critic_net(self.r*self.c*self.hidden_dim+self.lookahead_block_num*feature_dim).to(device)
+        self.Critic_net = Critic_net(self.r*self.c*self.hidden_dim+self.lookahead_block_num*feature_dim+1).to(device)
         if mod=='MLP':
             self.Actor_net = MLP((self.r*self.c+self.lookahead_block_num)*feature_dim,self.r*self.c).to(device)
-            self.Critic_net =MLP((self.r*self.c+self.lookahead_block_num)*feature_dim,1).to(device)
+            self.Critic_net =MLP((self.r*self.c+self.lookahead_block_num)*feature_dim+1,1).to(device)
         
         self.temperature = 1.5
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
@@ -255,7 +340,7 @@ class PPO(nn.Module):
         b,r,c,f=grids.shape #blocks b, lookahead*featuredim
         blocks=blocks.reshape(b,-1)
         
-        if self.mod=='GCN1' or self.mod=='GCN2':
+        if self.mod=='GCN1' or self.mod=='GCN2' or self.mod=='GAT':
             new_grids=grids.reshape(b,-1,f)
             blocks_expanded = blocks.unsqueeze(1).repeat(1, r*c, 1)  # (b, r*c, lookahead*featuredim)
             if ans!= None:
@@ -290,22 +375,25 @@ class PPO(nn.Module):
                 pi = output.gather(1, samples)
                 return pi, samples
     
-    def calculate_v(self, grids,blocks):
+    def calculate_v(self, grids,blocks,block_lefts):
         b,r,c,f=grids.shape #blocks b, lookahead*featuredim
         blocks=blocks.reshape(b,-1)
-        if self.mod=='GCN1' or self.mod=='GCN2':
+
+        if self.mod=='GCN1' or self.mod=='GCN2' or self.mod=='GAT':
             new_grids=grids.reshape(b,-1,f)
             output_vector=self.gnn(new_grids) #b,r*c,hidden_dim
             output_vector=output_vector.reshape(b,-1)
             merged_tensor = torch.cat([output_vector, blocks], dim=1)
+            merged_tensor=torch.cat([merged_tensor,block_lefts],dim=1)
             state_values=self.Critic_net(merged_tensor) #b,1
         else:
             new_grids = grids.reshape(b,-1) #b r*c*  
             merged_tensor = torch.cat([new_grids, blocks], dim=1)
-            state_values=self.Critic_net(merged_tensor) #b 1  
+            merged_tensor = torch.cat([merged_tensor, block_lefts], dim=1)
+            state_values=self.Critic_net(merged_tensor) #b 1
         return state_values
 
-    def update(self, gridss, blockss, actionss, rewardss,doness, maskss, probss, ep_len, step1, model_dir):
+    def update(self, gridss, blockss,block_leftss, actionss, rewardss,doness, maskss, probss, ep_len, step1, model_dir):
         ave_loss = 0
         en_loss = 0
         v_loss = 0
@@ -322,18 +410,19 @@ class PPO(nn.Module):
         gridss[:,:,:,0]=gridss[:,:,:,0]/500.0
         blockss[:,:,0]=blockss[:,:,0]/500.0
         grids=torch.tensor(gridss,dtype=torch.float32).to(device)
+        block_leftss=torch.tensor(block_leftss.reshape(-1,1),dtype=torch.float32).to(device) #b,1
         blocks=torch.tensor(blockss,dtype=torch.float32).to(device)
         actions=torch.tensor(actionss.reshape(-1,1),dtype=torch.int64).to(device)
         probs = torch.tensor(probss.reshape(-1,1), dtype=torch.float32).to(device)
         rewards = torch.tensor(rewardss.reshape(-1,1), dtype=torch.float32).to(device)
         masks= torch.tensor(maskss.reshape(b,r*c,1),dtype=torch.float32).to(device)
         dones = torch.tensor(doness.reshape(-1,1), dtype=torch.float32).to(device)
-        
+        block_leftss=block_leftss/100.0
         # 0 0 0 1 0 0 0 0 1 len=4
         # 0 0 1 0 0 0 0 1 
         # 0 0 0 0 1 len=5
 
-        temp_state_values=self.calculate_v(grids.reshape(-1,r,c,fea),blocks.reshape(b,-1,fea)) #b,1
+        temp_state_values=self.calculate_v(grids.reshape(-1,r,c,fea),blocks.reshape(b,-1,fea),block_leftss) #b,1
         state_values=temp_state_values # b,1
         next_state_values=torch.cat([temp_state_values[1:],temp_state_values[[0]]],dim=0) # b,1
         td_target = rewards + self.gamma * next_state_values * (1-dones) #b,1
@@ -350,11 +439,11 @@ class PPO(nn.Module):
                 advantage = self.gamma * self.lmbda * advantage + delta[t][0]
                 advantage_lst[t][0] = advantage
             i += ep    
-            
-        ratio = torch.exp(torch.log(pi_cal) - torch.log(probs))  # a/b == exp(log(a)-log(b))
+        eps = 1e-8 
+        ratio = torch.exp(torch.log(pi_cal) - torch.log(probs+eps))  # a/b == exp(log(a)-log(b))
 
         surr1 = ratio * advantage_lst
-        surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantage_lst
+        surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantage_lst.detach()
         loss = -torch.min(surr1, surr2) + F.smooth_l1_loss(state_values, td_target.detach()) * self.alpha
 
         ave_loss = loss.mean().item()
@@ -364,7 +453,7 @@ class PPO(nn.Module):
         self.optimizer.zero_grad()
         loss.mean().backward()
         self.optimizer.step()
-        if step1 % 40 == 0:
+        if step1 % 20 == 0:
             torch.save({
                 'model_state_dict': self.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
